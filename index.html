@@ -1774,10 +1774,10 @@ window.COHESITY_QUESTION_BANK =
 
     function appearsTooGenericForExamScope(question) {
       const combinedText = normalizeQualityText([
-        question.domain,
-        question.question,
+        question?.domain || '',
+        question?.question || '',
         ...(Array.isArray(question.choices) ? question.choices : []),
-        question.explanation
+        question?.explanation || ''
       ].join(' '));
       return !TECHNICAL_SCOPE_PATTERNS.some((pattern) => pattern.test(combinedText));
     }
@@ -2720,14 +2720,14 @@ window.COHESITY_QUESTION_BANK =
         }
         const returnedQuestionCount = parsed.questions.length;
         const validGeneratedQuestions = [];
-        const genericScopeWarnings = new WeakSet();
+        const questionsWithGenericScope = new WeakSet();
         let skippedInvalidGeneratedCount = 0;
         let skippedLowQualityDistractorCount = 0;
         parsed.questions.forEach((question, index) => {
           try {
             const validatedQuestion = validateGeneratedQuestion(question, index);
             if (appearsTooGenericForExamScope(validatedQuestion)) {
-              genericScopeWarnings.add(validatedQuestion);
+              questionsWithGenericScope.add(validatedQuestion);
             }
             validGeneratedQuestions.push(validatedQuestion);
           } catch (error) {
@@ -2778,7 +2778,7 @@ window.COHESITY_QUESTION_BANK =
           statusMessage = `${baseStatus}; displaying ${finalQuestions.length}. Loaded ${aiGeneratedCount} AI question${aiGeneratedCount === 1 ? '' : 's'} and topped up with ${builtInFallbackCount} built-in question${builtInFallbackCount === 1 ? '' : 's'}.`;
         }
 
-        const genericQuestionWarningCount = aiQuestionsForDisplay.reduce((count, question) => count + (genericScopeWarnings.has(question) ? 1 : 0), 0);
+        const genericQuestionWarningCount = aiQuestionsForDisplay.reduce((count, question) => count + (questionsWithGenericScope.has(question) ? 1 : 0), 0);
         if (genericQuestionWarningCount > 0) {
           warningMessage = warningMessage
             ? `${warningMessage} Note: ${genericQuestionWarningCount} AI question${genericQuestionWarningCount === 1 ? '' : 's'} looked broader than ideal for the Cohesity exam scope; review those items against official Cohesity docs.`
