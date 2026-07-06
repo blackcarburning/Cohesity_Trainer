@@ -1489,19 +1489,16 @@ window.COHESITY_QUESTION_BANK =
           if (question.correctAnswerIndex < 0 || question.correctAnswerIndex >= question.choices.length) {
             throw new Error(`${prefix} has invalid correctAnswerIndex.`);
           }
-          if (deduped.length === 1 && deduped[0] !== question.correctAnswerIndex) {
-            throw new Error(`${prefix} has inconsistent correctAnswerIndex and correctAnswerIndexes.`);
-          }
-          if (deduped.length > 1 && !deduped.includes(question.correctAnswerIndex)) {
+          if (!deduped.includes(question.correctAnswerIndex)) {
             throw new Error(`${prefix} has inconsistent correctAnswerIndex and correctAnswerIndexes.`);
           }
         }
         if (deduped.length === 1) {
+          if (!hasSingle) {
+            throw new Error(`${prefix} must use correctAnswerIndex for single-answer questions.`);
+          }
           indexes = deduped;
         } else {
-          if (deduped.length < 2) {
-            throw new Error(`${prefix} correctAnswerIndexes must include at least two answers.`);
-          }
           if (deduped.length >= question.choices.length) {
             throw new Error(`${prefix} correctAnswerIndexes must be fewer than all choices.`);
           }
@@ -2230,7 +2227,13 @@ window.COHESITY_QUESTION_BANK =
       const remappedChoices = permutation.map((oldIndex) => normalized.choices[oldIndex]);
       const oldToNewIndex = new Map(permutation.map((oldIndex, newIndex) => [oldIndex, newIndex]));
       const remappedCorrectIndexes = normalized.correctAnswerIndexes
-        .map((oldIndex) => oldToNewIndex.get(oldIndex))
+        .map((oldIndex) => {
+          const newIndex = oldToNewIndex.get(oldIndex);
+          if (newIndex === undefined) {
+            throw new Error(`${prefix} has an invalid correct answer index mapping after shuffle.`);
+          }
+          return newIndex;
+        })
         .sort((a, b) => a - b);
       return {
         ...normalized,

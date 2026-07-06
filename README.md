@@ -79,7 +79,7 @@ Open `index.html` in a browser to use the Cohesity Certified Architect Expert pr
 - AI-generated sets are saved immediately after successful generation with source label **AI generated**.
 - A dropdown above the question list shows saved sets labelled by date/time, source (Built-in or AI generated), and model (if AI generated).
 - Select any saved set and click **Load selected set** to reload those questions. Loading a saved set resets all current answer selections.
-- Loading a saved set reshuffles answer choices again and remaps correct-answer indexes so answer positions remain randomized each load.
+- Loading a saved set intentionally creates a fresh shuffle each time and remaps correct-answer indexes so answer positions remain randomized on every load (this helps prevent memorizing fixed option positions).
 - Up to the **25 most recent** sets are kept. Older sets are automatically pruned.
 - Click **Clear all history** to remove all saved sets from local storage.
 - If local storage is unavailable (e.g. private browsing mode or quota exceeded), a warning is shown and history falls back to in-session only.
