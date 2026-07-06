@@ -174,6 +174,38 @@
     .choice.correct { border-color: #67c08d; background: #eefbf3; }
     .choice.incorrect { border-color: #f1a8a8; background: #fff5f5; }
     .choice input { margin-top: 3px; }
+    .lookup-section {
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+    }
+    .lookup-query {
+      width: 100%;
+      min-height: 90px;
+      max-width: none;
+      resize: vertical;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      background: #fbfcff;
+      color: var(--text);
+      font: inherit;
+      line-height: 1.4;
+    }
+    .lookup-response {
+      margin-top: 8px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #fbfcff;
+      padding: 10px 12px;
+      min-height: 68px;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+    .lookup-response.empty {
+      color: var(--muted);
+      font-style: italic;
+    }
     .answer-panel {
       margin-top: 14px;
       padding: 14px;
@@ -209,7 +241,7 @@
       .page { padding-inline: 12px; }
       .controls-row, .timer-row, .button-row { align-items: stretch; }
       button { width: 100%; }
-      input[type="number"], input[type="password"], input[type="text"], select { max-width: none; }
+      input[type="number"], input[type="password"], input[type="text"], textarea, select { max-width: none; }
     }
   </style>
 </head>
@@ -278,6 +310,17 @@
         <p id="modelStatus" class="help" aria-live="polite"></p>
         <div class="button-row">
           <button id="appendOpenAIButton" type="button" class="secondary">Generate 50 more with OpenAI</button>
+        </div>
+        <div class="lookup-section" aria-labelledby="lookup-heading">
+          <h3 id="lookup-heading" style="margin:0 0 8px 0;">Ad hoc LLM lookup</h3>
+          <p class="help">Study helper only: verify exam-critical facts against official Cohesity documentation.</p>
+          <label for="adhocLookupQuery">Lookup question</label>
+          <textarea id="adhocLookupQuery" class="lookup-query" placeholder="Ask about a Cohesity architecture, design, security, integration, or troubleshooting concept..."></textarea>
+          <div class="button-row" style="margin-top:8px;">
+            <button id="adhocLookupButton" type="button" class="ghost">Ask LLM</button>
+          </div>
+          <p id="adhocLookupStatus" class="help" aria-live="polite"></p>
+          <div id="adhocLookupResponse" class="lookup-response empty" role="region" aria-live="polite" aria-label="LLM lookup response">Response will appear here.</div>
         </div>
         <div class="warning">⚠️ <strong>Security notice:</strong> Your API key is stored in browser local storage. This is convenient but less secure on shared or public machines. Use <strong>Forget saved API key</strong> to remove it when done. Browser-side API calls also expose the key to this page context.</div>
       </section>
@@ -1506,6 +1549,10 @@ window.COHESITY_QUESTION_BANK =
     const openaiKeyInput = document.getElementById('openaiKey');
     const openaiModelInput = document.getElementById('openaiModel');
     const modelStatus = document.getElementById('modelStatus');
+    const adhocLookupQuery = document.getElementById('adhocLookupQuery');
+    const adhocLookupButton = document.getElementById('adhocLookupButton');
+    const adhocLookupStatus = document.getElementById('adhocLookupStatus');
+    const adhocLookupResponse = document.getElementById('adhocLookupResponse');
     const questionList = document.getElementById('questionList');
     const summary = document.getElementById('summary');
     const examStatus = document.getElementById('examStatus');
@@ -1625,13 +1672,13 @@ window.COHESITY_QUESTION_BANK =
      * Returns the sanitized key string, or null if invalid (and shows a message).
      * @param {HTMLElement} statusEl - Element to display error messages in.
      */
-    function getValidatedApiKey(statusEl) {
+    function getValidatedApiKey(statusEl, actionLabel = 'request generated questions') {
       const raw = openaiKeyInput.value;
       const sanitized = sanitizeApiKey(raw);
       // Update input with sanitized value if it changed
       if (sanitized !== raw) openaiKeyInput.value = sanitized;
       if (!sanitized) {
-        statusEl.textContent = 'Enter an OpenAI API key before requesting generated questions.';
+        statusEl.textContent = `Enter an OpenAI API key before trying to ${actionLabel}.`;
         return null;
       }
       if (!isHeaderSafeApiKey(sanitized)) {
@@ -1911,7 +1958,8 @@ window.COHESITY_QUESTION_BANK =
           label.className = 'choice';
           const savedAnswerIndexes = getSavedAnswerIndexes(question.instanceId);
           const isCorrect = question.correctAnswerIndexes.includes(choiceIndex);
-          if (state.submitted && isCorrect) label.classList.add('correct');
+          const showCorrect = state.submitted || state.showAllAnswers || state.revealed.has(question.instanceId);
+          if (showCorrect && isCorrect) label.classList.add('correct');
           if (state.submitted && savedAnswerIndexes.includes(choiceIndex) && !isCorrect) label.classList.add('incorrect');
 
           const input = document.createElement('input');
@@ -2298,6 +2346,70 @@ window.COHESITY_QUESTION_BANK =
       }
     }
 
+    async function runAdhocLookup() {
+      const apiKey = getValidatedApiKey(adhocLookupStatus, 'run a lookup');
+      const model = openaiModelInput.value;
+      const query = adhocLookupQuery.value.trim();
+      if (!apiKey) return;
+      if (!query) {
+        adhocLookupStatus.textContent = 'Enter a lookup question before clicking Ask LLM.';
+        return;
+      }
+      if (!model) {
+        adhocLookupStatus.textContent = 'Select an OpenAI model before requesting a lookup.';
+        return;
+      }
+
+      adhocLookupButton.disabled = true;
+      const previousLabel = adhocLookupButton.textContent;
+      adhocLookupButton.textContent = 'Asking LLM...';
+      adhocLookupStatus.textContent = 'Requesting lookup response...';
+      adhocLookupResponse.classList.add('empty');
+      adhocLookupResponse.textContent = 'Waiting for response...';
+      try {
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + apiKey
+          },
+          body: JSON.stringify({
+            model,
+            temperature: 0.2,
+            messages: [
+              {
+                role: 'system',
+                content: 'You are a Cohesity study lookup assistant. Answer concisely using Cohesity official documentation and certification terminology where possible. If uncertain, say what is uncertain instead of guessing. Do not invent facts or sources.'
+              },
+              {
+                role: 'user',
+                content: `Study lookup question: ${query}\n\nProvide a concise answer and include a short verification note encouraging official Cohesity documentation for exam-critical decisions.`
+              }
+            ]
+          })
+        });
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`OpenAI request failed (${response.status}): ${errorText}`);
+        }
+        const payload = await response.json();
+        const content = payload?.choices?.[0]?.message?.content;
+        if (typeof content !== 'string' || !content.trim()) {
+          throw new Error('OpenAI returned an empty lookup response.');
+        }
+        adhocLookupResponse.classList.remove('empty');
+        adhocLookupResponse.textContent = content.trim();
+        adhocLookupStatus.textContent = `Lookup response received from model ${model}.`;
+      } catch (error) {
+        adhocLookupResponse.classList.add('empty');
+        adhocLookupResponse.textContent = 'Response will appear here.';
+        adhocLookupStatus.textContent = error instanceof Error ? error.message : 'Lookup request failed.';
+      } finally {
+        adhocLookupButton.disabled = false;
+        adhocLookupButton.textContent = previousLabel;
+      }
+    }
+
     generateButton.addEventListener('click', generateBuiltInExam);
     submitButton.addEventListener('click', () => submitExam(false));
     toggleAnswersButton.addEventListener('click', () => {
@@ -2313,6 +2425,7 @@ window.COHESITY_QUESTION_BANK =
     refreshModelsButton.addEventListener('click', loadModelsFromAPI);
     forgetApiKeyButton.addEventListener('click', forgetApiKey);
     appendOpenAIButton.addEventListener('click', appendOpenAIQuestions);
+    adhocLookupButton.addEventListener('click', runAdhocLookup);
     loadHistoryButton.addEventListener('click', loadHistorySet);
     clearHistoryButton.addEventListener('click', clearAllHistory);
 
