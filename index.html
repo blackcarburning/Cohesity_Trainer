@@ -1371,8 +1371,11 @@ window.COHESITY_QUESTION_BANK =
       let indexes;
       if (hasMulti) {
         const deduped = [...new Set(question.correctAnswerIndexes)];
-        if (deduped.length !== question.correctAnswerIndexes.length || deduped.some((value) => !Number.isInteger(value) || value < 0 || value >= question.choices.length)) {
-          throw new Error(`${prefix} has invalid correctAnswerIndexes.`);
+        if (deduped.length !== question.correctAnswerIndexes.length) {
+          throw new Error(`${prefix} correctAnswerIndexes must be unique.`);
+        }
+        if (deduped.some((value) => !Number.isInteger(value) || value < 0 || value >= question.choices.length)) {
+          throw new Error(`${prefix} has out-of-range values in correctAnswerIndexes.`);
         }
         indexes = deduped.sort((a, b) => a - b);
       } else {
@@ -1382,6 +1385,9 @@ window.COHESITY_QUESTION_BANK =
         indexes = [question.correctAnswerIndex];
       }
 
+      if (Number.isInteger(question.selectCount) && question.selectCount > 0 && question.selectCount !== indexes.length) {
+        throw new Error(`${prefix} selectCount must match the number of correct answers.`);
+      }
       const selectCount = Number.isInteger(question.selectCount) && question.selectCount > 0 ? question.selectCount : indexes.length;
       return {
         ...question,
@@ -1893,7 +1899,7 @@ window.COHESITY_QUESTION_BANK =
                 content: [
                   'Create exactly 50 Cohesity Certified Architect Expert practice questions.',
                   `Allowed domains: ${selectedDomains.join(', ') || DOMAIN_ORDER.join(', ')}.`,
-                  'Use this JSON schema exactly: {"questions":[{"domain":"...","question":"...","choices":["A","B","C","D"],"correctAnswerIndex":0,"correctAnswerIndexes":[0,2],"selectCount":2,"explanation":"...","citationTitle":"...","citationUrl":"https://..."}]}.',
+                  'Use this JSON schema exactly: {"questions":[{"domain":"...","question":"...","choices":["A","B","C","D"],"correctAnswerIndex":0,"explanation":"...","citationTitle":"...","citationUrl":"https://..."},{"domain":"...","question":"...","choices":["A","B","C","D"],"correctAnswerIndexes":[0,2],"selectCount":2,"explanation":"...","citationTopic":"Cohesity certification overview / study topic"}]}.',
                   'Each question must include either correctAnswerIndex (single-answer) or correctAnswerIndexes (multi-select).',
                   'Include a realistic mix of scenario-based single-answer and multi-select questions (for example select two/select three).',
                   'If you cannot provide an official Cohesity citation URL for a question, use citationTopic: "Cohesity certification overview / study topic" instead of citationTitle/citationUrl.',
