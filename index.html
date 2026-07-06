@@ -1384,13 +1384,16 @@ window.COHESITY_QUESTION_BANK =
 ];
   </script>
   <script>
+    // Supported multi-select patterns: [choiceCount, correctCount]
+    const MULTI_SELECT_PATTERNS = [[4, 2], [5, 3]];
+
     function normalizeQuestion(question, prefix = 'Question') {
       if (!question || typeof question !== 'object') throw new Error(`${prefix} is not an object.`);
       if (!Array.isArray(question.choices) || question.choices.length < 4 || question.choices.length > 5) {
         throw new Error(`${prefix} must include 4 or 5 choices.`);
       }
       if (question.choices.some((c) => typeof c !== 'string' || !c.trim())) {
-        throw new Error(`${prefix} choices must be non-empty strings.`);
+        throw new Error(`${prefix} choices must be non-empty, non-whitespace strings.`);
       }
       const hasSingle = Number.isInteger(question.correctAnswerIndex);
       const hasMulti = Array.isArray(question.correctAnswerIndexes);
@@ -1414,8 +1417,7 @@ window.COHESITY_QUESTION_BANK =
         }
         indexes = deduped.sort((a, b) => a - b);
         // Enforce supported multi-select patterns: 2-of-4 or 3-of-5
-        const SUPPORTED_PATTERNS = [[4, 2], [5, 3]];
-        const validPattern = SUPPORTED_PATTERNS.some(([c, a]) => question.choices.length === c && indexes.length === a);
+        const validPattern = MULTI_SELECT_PATTERNS.some(([c, a]) => question.choices.length === c && indexes.length === a);
         if (!validPattern) {
           throw new Error(`${prefix} multi-select must use 2-of-4 or 3-of-5 pattern (got ${indexes.length} of ${question.choices.length}).`);
         }
@@ -1963,7 +1965,8 @@ window.COHESITY_QUESTION_BANK =
       const multiPool = pool.filter((q) => q.selectCount > 1);
       const singlePool = pool.filter((q) => q.selectCount === 1);
 
-      // Cap multi-select at MAX_MULTI; do not force repetition for multi-select questions
+      // Cap multi-select at MAX_MULTI; wantedMulti is min(pool, cap) so sampleQuestions
+      // receives a count <= pool size — no unwanted repetition for multi-select questions.
       const wantedMulti = Math.min(MAX_MULTI, multiPool.length);
       const wantedSingle = TOTAL - wantedMulti;
 
@@ -1975,14 +1978,14 @@ window.COHESITY_QUESTION_BANK =
       } else {
         // No single-answer questions available — fill from multi-select pool
         singleQuestions = sampleQuestions(multiPool, wantedSingle);
-        statusNote = ' Note: domain filter has only multi-select questions; the balance of ≤10 multi-select per 50 could not be maintained.';
+        statusNote = 'Note: domain filter has only multi-select questions; the balance of ≤10 multi-select per 50 could not be maintained.';
       }
 
       const questions = shuffle([...multiQuestions, ...singleQuestions]);
       resetExam(questions);
       saveToHistory(questions, 'Built-in', selectedDomains, null);
       renderHistoryDropdown();
-      if (statusNote) examStatus.textContent += statusNote;
+      if (statusNote) examStatus.textContent += ' ' + statusNote;
     }
 
     function extractJsonString(content) {
