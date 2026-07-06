@@ -10,7 +10,7 @@ Open `index.html` in a browser to use the Cohesity Certified Architect Expert pr
 - Reveal or hide answers during practice and review your selected answer(s), correct answer(s), explanations, and citations after submission.
 - Domain filters for architecture, discovery and design, security, integrations, and troubleshooting.
 - Built-in question bank uses plausible distractors (true Cohesity facts out of context) and distributes the correct answer evenly across all four positions.
-- Provide an OpenAI API key to generate a fresh 50-question AI exam client-side; the AI-generated set **replaces** the current exam.
+- Provide an OpenAI API key to request 70 AI questions client-side; the app validates them and displays a 50-question AI/fallback exam that **replaces** the current exam.
 - AI-generated question sets are saved to browser local storage and appear in the history dropdown labelled **AI generated**.
 - Each question card includes an **Explain correct answer with LLM** button for inline study assistance (available after revealing or submitting).
 - Right-side ad hoc LLM lookup box for quick study questions using the same API key/model settings.
@@ -20,7 +20,12 @@ Open `index.html` in a browser to use the Cohesity Certified Architect Expert pr
 - Question bank & memory stats panel shows built-in bank count, current exam info, and saved history totals.
 
 ### AI exam generation
-- Click **Generate 50 AI questions** to request 50 fresh questions from OpenAI.
+- Click **Generate AI exam (70→50)** to request 70 fresh questions from OpenAI.
+- The app validates each returned question individually, skips invalid entries, and reports returned/valid/skipped/displayed counts in status text.
+- When at least 50 valid AI questions are available, the app loads the first 50 valid AI questions as the current exam.
+- When fewer than 50 valid AI questions are available:
+  - If a current exam exists, the app replaces the first `N` current questions with the `N` valid AI questions and keeps the rest.
+  - If no current exam exists, the app uses the `N` valid AI questions and tops up from the built-in bank where possible.
 - The generated set **replaces** the current exam — it does not append to it. The previous exam is lost unless it was already saved as a history set.
 - Answers, reveals, submission state, and timer are all reset when the new exam loads.
 - The generated set is immediately saved to browser local storage with source label **AI generated**.
@@ -40,7 +45,7 @@ Open `index.html` in a browser to use the Cohesity Certified Architect Expert pr
 ### OpenAI model selector
 - A dropdown lists curated model options including `gpt-4.1-mini` (default), `gpt-4.1`, `gpt-4o-mini`, `gpt-4o`, and frontier models (`gpt-5.4-nano`, `gpt-5.4-mini`, `gpt-5.4`, `gpt-5.5`).
 - Click **Refresh available models from API key** after entering your API key to replace the curated list with the models actually available on your key (filtered to chat-capable GPT models). If the refresh fails, the curated defaults are kept and an error message is shown.
-- The selected model is used when clicking **Generate 50 AI questions**.
+- The selected model is used when clicking **Generate AI exam (70→50)**.
 - The same selected model is also used by the ad hoc **Ask LLM** lookup panel and per-question LLM explanations.
 - AI-generated batches can include a mix of single-answer and multi-select scenario questions.
 
@@ -51,13 +56,14 @@ Open `index.html` in a browser to use the Cohesity Certified Architect Expert pr
 - Lookup responses are for study assistance and should be verified against official Cohesity documentation for exam-critical facts.
 
 ### Exam history (local storage)
-- Every generated 50-question set is saved to browser local storage automatically.
+- Every successful generated/replacement set is saved to browser local storage automatically.
 - AI-generated sets are saved immediately after successful generation with source label **AI generated**.
 - A dropdown above the question list shows saved sets labelled by date/time, source (Built-in or AI generated), and model (if AI generated).
 - Select any saved set and click **Load selected set** to reload those questions. Loading a saved set resets all current answer selections.
 - Up to the **25 most recent** sets are kept. Older sets are automatically pruned.
 - Click **Clear all history** to remove all saved sets from local storage.
 - If local storage is unavailable (e.g. private browsing mode or quota exceeded), a warning is shown and history falls back to in-session only.
+- Saved AI history metadata includes model, selected domains, final count, AI-generated count, built-in fallback count, retained current-exam count (when applicable), skipped invalid generated count, and returned generated count.
 
 ### Question bank & memory stats
 - The stats panel shows:
@@ -81,7 +87,7 @@ Open `index.html` in a browser to use the Cohesity Certified Architect Expert pr
   - Selected model
   - Selected domains
   - Timer setting
-  - Metadata for all saved history entries (id, date, source, model, question count)
+  - Metadata for all saved history entries (id, date, source, model, question count, plus AI/fallback generation details when available)
   - Full question data for all saved sets including AI-generated ones (`savedQuestionSets` field)
   - Schema version and export timestamp
 - **The API key is intentionally excluded** from the export file for security. Re-enter it manually after loading the config on another machine.
@@ -96,7 +102,8 @@ Open `index.html` in a browser to use the Cohesity Certified Architect Expert pr
 - Scoring is **strict**: a multi-select question is correct only when the selected set exactly matches the correct answer set.
 - Checkboxes are used for multi-select questions; radio buttons for single-answer questions.
 - The app enforces the maximum selection count: once you have selected the required number of answers you cannot add more.
-- AI generation prompts are restricted to these patterns and the 10-question cap. Generated batches with more than 10 multi-select questions are rejected with an error so you can regenerate.
+- AI generation prompts are restricted to these patterns and request no more than 14 multi-select questions out of 70 so the displayed 50-question exam can stay near the 10-question cap.
+- While selecting displayed questions, the app skips excess AI multi-select questions after 10 when enough single-answer AI questions are available; if pool constraints force more multi-select questions, a warning is shown.
 - If domain filtering limits the available single-answer pool, the app maintains the ≤10 multi-select cap whenever possible. A status message is shown if the filtered pool makes this impossible (e.g. a domain with only multi-select questions).
 
 ## Notes
