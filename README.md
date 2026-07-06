@@ -11,6 +11,7 @@ Open `index.html` in a browser to use the Cohesity Certified Architect Expert pr
 - Domain filters for architecture, discovery and design, security, integrations, and troubleshooting.
 - Built-in question bank uses plausible distractors (true Cohesity facts out of context) and distributes the correct answer evenly across all four positions.
 - Provide an OpenAI API key to request 70 AI questions client-side; the app validates them and displays a 50-question AI/fallback exam that **replaces** the current exam.
+- AI generation is tuned for Cohesity product-specific Architect Expert scope, with technical scenario questions and plausible Cohesity-adjacent distractors instead of absurd wrong answers.
 - AI-generated question sets are saved to browser local storage and appear in the history dropdown labelled **AI generated**.
 - Each question card includes an **Explain correct answer with LLM** button for inline study assistance (available after revealing or submitting).
 - Right-side ad hoc LLM lookup box for quick study questions using the same API key/model settings.
@@ -22,6 +23,9 @@ Open `index.html` in a browser to use the Cohesity Certified Architect Expert pr
 ### AI exam generation
 - Click **Generate AI exam (70→50)** to request 70 fresh questions from OpenAI.
 - The app validates each returned question individually, skips invalid entries, and reports returned/valid/skipped/displayed counts in status text.
+- The AI prompt explicitly targets Cohesity product-level technical detail, architectural decision-making, supported workflow differences, troubleshooting/gap-analysis reasoning, and scenario-based design questions.
+- The AI prompt also requires plausible Cohesity-adjacent distractors that are wrong for a clear reason (scope, workflow stage, deployment model, feature purpose, or design implication), rather than silly or unrelated answers.
+- Generated questions with obviously silly distractor terms (for example `cafeteria`, `rack screw`, `coffee`, or `printer toner`) are rejected during validation without breaking partial-generation fallback behavior.
 - When at least 50 valid AI questions are available, the app loads the first 50 valid AI questions as the current exam.
 - When fewer than 50 valid AI questions are available:
   - If a current exam exists, the app replaces the first `N` current questions with the `N` valid AI questions and keeps the rest.
@@ -32,6 +36,18 @@ Open `index.html` in a browser to use the Cohesity Certified Architect Expert pr
 - It appears at the top of the saved-set dropdown so you can reload it at any time.
 - If local storage fails, the exam still loads into the current pane and a warning is shown.
 - **The built-in question bank is not modified by AI generation.** AI questions live only in the current session and browser local storage.
+- AI-generated content is still study assistance: review exam-critical facts against official Cohesity documentation before relying on them.
+
+### Architect Expert product/topic scope emphasis
+- AI generation and the built-in bank are tuned toward the following Cohesity Architect Expert scope areas:
+  - Aligning Cohesity technical solutions with business problems and identifying protection-strategy gaps
+  - Cohesity Data Cloud, the Cohesity platform, SpanFS, and Cohesity branded/OEM hardware plus VE, CE, and NGCE options
+  - Cluster networking, cloud integration, hybrid/multi-cloud architecture, and the Cohesity Web Sizing Tool
+  - Cohesity DataProtect, Cloud Services, SmartFiles, backup-target use cases, Replication, CloudArchive, and CloudTier
+  - Organizations, Helios SaaS and Self-Managed patterns, and the Cohesity API for automation
+  - Security hardening with MFA, SSO, RBAC, and DataLock
+  - Cyber resiliency, FortKnox cyber vaulting, anomaly detection, threat hunting/scanning/detection, data classification, and third-party security integrations
+  - Gap analysis, capacity/performance trend review, and using the UI or Siren for health checks and troubleshooting
 
 ### Per-question LLM explanation
 - Each question card has an **Explain correct answer with LLM** button inside the answer panel.
