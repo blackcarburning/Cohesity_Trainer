@@ -255,7 +255,7 @@
         <div class="controls-row">
           <div>
             <label for="openaiKey">OpenAI API key</label>
-            <input id="openaiKey" type="password" autocomplete="off" spellcheck="false" placeholder="sk-..." />
+            <input id="openaiKey" type="password" autocomplete="off" spellcheck="false" placeholder="sk-... (no quotes or spaces)" />
           </div>
           <div>
             <label for="openaiModel">Model</label>
@@ -1541,10 +1541,55 @@ window.COHESITY_QUESTION_BANK =
       try { localStorage.removeItem(key); } catch { /* ignore */ }
     }
 
+    // ── API key sanitization and validation ──────────────────────────────────
+    /**
+     * Sanitize a raw API key string to remove characters that would cause
+     * fetch() to throw "String contains non ISO-8859-1 code point".
+     * Returns the cleaned string (may still be invalid if original was garbage).
+     */
+    function sanitizeApiKey(raw) {
+      if (typeof raw !== 'string') return '';
+      let key = raw;
+      // Remove invisible and formatting-only Unicode characters that can be
+      // introduced by copy-paste:
+      //   U+00AD  soft hyphen
+      //   U+00A0  non-breaking space
+      //   U+200B–U+200F  zero-width space, non-joiners, LTR/RTL marks
+      //   U+202A–U+202E  bidirectional formatting controls (LRE, RLE, PDF…)
+      //   U+2060–U+206F  word joiner, invisible operators, inhibit-swap, etc.
+      //   U+FEFF  BOM / zero-width no-break space
+      key = key.replace(/[\u00AD\u00A0\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/g, '');
+      // Trim all leading/trailing whitespace including newlines
+      key = key.trim();
+      // Remove wrapping quotes or backticks (single, double, curly, backtick)
+      key = key.replace(/^[`"'\u201C\u201D\u2018\u2019]+|[`"'\u201C\u201D\u2018\u2019]+$/g, '');
+      // Trim again after stripping quotes
+      key = key.trim();
+      // Remove any remaining internal whitespace and newline characters
+      key = key.replace(/[\s\r\n\t]+/g, '');
+      return key;
+    }
+
+    /**
+     * Returns true if the key string contains only characters that are safe for
+     * HTTP header values (printable ASCII 0x21–0x7E, excluding DEL 0x7F).
+     * Minimum length of 10 is a basic sanity check to reject obviously empty/short values.
+     */
+    // Minimum character count to consider a key non-trivially short.
+    const MIN_API_KEY_LENGTH = 10;
+    function isHeaderSafeApiKey(key) {
+      if (!key || key.length < MIN_API_KEY_LENGTH) return false;
+      // HTTP headers must contain only printable ASCII (0x21-0x7E)
+      return /^[\x21-\x7E]+$/.test(key);
+    }
+
     // ── API key / model persistence ──────────────────────────────────────────
     function saveApiKeyAndModel() {
-      const key = openaiKeyInput.value.trim();
-      if (key) lsSet(LS_API_KEY, key); else lsRemove(LS_API_KEY);
+      const raw = openaiKeyInput.value;
+      const sanitized = sanitizeApiKey(raw);
+      // If sanitization changed the value, update the input field silently
+      if (sanitized !== raw) openaiKeyInput.value = sanitized;
+      if (sanitized) lsSet(LS_API_KEY, sanitized); else lsRemove(LS_API_KEY);
       lsSet(LS_MODEL, openaiModelInput.value);
     }
 
@@ -1556,12 +1601,48 @@ window.COHESITY_QUESTION_BANK =
 
     function restoreApiKeyAndModel() {
       const savedKey = lsGet(LS_API_KEY, '');
-      if (savedKey) openaiKeyInput.value = savedKey;
+      if (savedKey) {
+        const sanitized = sanitizeApiKey(savedKey);
+        if (!isHeaderSafeApiKey(sanitized)) {
+          // Invalid saved key — clear it and warn the user
+          lsRemove(LS_API_KEY);
+          modelStatus.textContent = 'The saved API key contained hidden or unsupported characters and has been cleared. Paste only the raw OpenAI key (for example sk-...).';
+        } else {
+          openaiKeyInput.value = sanitized;
+          // Re-save sanitized value if it changed
+          if (sanitized !== savedKey) lsSet(LS_API_KEY, sanitized);
+        }
+      }
       const savedModel = lsGet(LS_MODEL, '');
       if (savedModel) {
         const opt = Array.from(openaiModelInput.options).find(o => o.value === savedModel);
         if (opt) openaiModelInput.value = savedModel;
       }
+    }
+
+    /**
+     * Get, sanitize, and validate the API key from the input field.
+     * Returns the sanitized key string, or null if invalid (and shows a message).
+     * @param {HTMLElement} statusEl - Element to display error messages in.
+     */
+    function getValidatedApiKey(statusEl) {
+      const raw = openaiKeyInput.value;
+      const sanitized = sanitizeApiKey(raw);
+      // Update input with sanitized value if it changed
+      if (sanitized !== raw) openaiKeyInput.value = sanitized;
+      if (!sanitized) {
+        statusEl.textContent = 'Enter an OpenAI API key before requesting generated questions.';
+        return null;
+      }
+      if (!isHeaderSafeApiKey(sanitized)) {
+        statusEl.textContent = 'The API key contained hidden or unsupported characters and has been cleared. Paste only the raw OpenAI key (for example sk-...). Use "Forget saved API key" and paste it again.';
+        lsRemove(LS_API_KEY);
+        openaiKeyInput.value = '';
+        return null;
+      }
+      // Re-save the sanitized key
+      lsSet(LS_API_KEY, sanitized);
+      return sanitized;
     }
 
     // ── Exam history ─────────────────────────────────────────────────────────
@@ -1705,11 +1786,12 @@ window.COHESITY_QUESTION_BANK =
         if (!available.length) available = shuffle(pool);
         picked.push({ ...available.pop() });
       }
-      return picked.map((item, index) => normalizeQuestion({
+      // Pool items are already normalized; only stamp instanceId and source.
+      return picked.map((item, index) => ({
         ...item,
         instanceId: `${item.id}-${index + 1}-${Math.random().toString(36).slice(2, 8)}`,
         source: item.source || 'Built-in'
-      }, `Sampled question ${index + 1}`));
+      }));
     }
 
     function formatTime(ms) {
@@ -1949,43 +2031,48 @@ window.COHESITY_QUESTION_BANK =
     }
 
     function generateBuiltInExam() {
-      const selectedDomains = getSelectedDomains();
-      if (!selectedDomains.length) {
-        examStatus.textContent = 'Select at least one domain before generating an exam.';
-        return;
+      try {
+        const selectedDomains = getSelectedDomains();
+        if (!selectedDomains.length) {
+          examStatus.textContent = 'Select at least one domain before generating an exam.';
+          return;
+        }
+        const pool = QUESTION_BANK.filter((question) => selectedDomains.includes(question.domain));
+        if (!pool.length) {
+          examStatus.textContent = 'No built-in questions matched the current domain filters.';
+          return;
+        }
+
+        const MAX_MULTI = 10;
+        const TOTAL = 50;
+        const multiPool = pool.filter((q) => q.selectCount > 1);
+        const singlePool = pool.filter((q) => q.selectCount === 1);
+
+        // Cap multi-select at MAX_MULTI; wantedMulti is min(pool, cap) so sampleQuestions
+        // receives a count <= pool size — no unwanted repetition for multi-select questions.
+        const wantedMulti = Math.min(MAX_MULTI, multiPool.length);
+        const wantedSingle = TOTAL - wantedMulti;
+
+        const multiQuestions = wantedMulti > 0 ? sampleQuestions(multiPool, wantedMulti) : [];
+        let singleQuestions;
+        let statusNote = '';
+        if (singlePool.length > 0) {
+          singleQuestions = sampleQuestions(singlePool, wantedSingle);
+        } else {
+          // No single-answer questions available — fill from multi-select pool
+          singleQuestions = sampleQuestions(multiPool, wantedSingle);
+          statusNote = 'Note: domain filter has only multi-select questions; the balance of ≤10 multi-select per 50 could not be maintained.';
+        }
+
+        const questions = shuffle([...multiQuestions, ...singleQuestions]);
+        resetExam(questions);
+        saveToHistory(questions, 'Built-in', selectedDomains, null);
+        renderHistoryDropdown();
+        if (statusNote) examStatus.textContent += ' ' + statusNote;
+      } catch (error) {
+        console.error('Built-in generation failed:', error);
+        examStatus.textContent = 'Built-in generation failed: ' + (error instanceof Error ? error.message : String(error));
       }
-      const pool = QUESTION_BANK.filter((question) => selectedDomains.includes(question.domain));
-      if (!pool.length) {
-        examStatus.textContent = 'No built-in questions matched the current domain filters.';
-        return;
-      }
-
-      const MAX_MULTI = 10;
-      const TOTAL = 50;
-      const multiPool = pool.filter((q) => q.selectCount > 1);
-      const singlePool = pool.filter((q) => q.selectCount === 1);
-
-      // Cap multi-select at MAX_MULTI; wantedMulti is min(pool, cap) so sampleQuestions
-      // receives a count <= pool size — no unwanted repetition for multi-select questions.
-      const wantedMulti = Math.min(MAX_MULTI, multiPool.length);
-      const wantedSingle = TOTAL - wantedMulti;
-
-      const multiQuestions = wantedMulti > 0 ? sampleQuestions(multiPool, wantedMulti) : [];
-      let singleQuestions;
-      let statusNote = '';
-      if (singlePool.length > 0) {
-        singleQuestions = sampleQuestions(singlePool, wantedSingle);
-      } else {
-        // No single-answer questions available — fill from multi-select pool
-        singleQuestions = sampleQuestions(multiPool, wantedSingle);
-        statusNote = 'Note: domain filter has only multi-select questions; the balance of ≤10 multi-select per 50 could not be maintained.';
-      }
-
-      const questions = shuffle([...multiQuestions, ...singleQuestions]);
-      resetExam(questions);
-      saveToHistory(questions, 'Built-in', selectedDomains, null);
-      renderHistoryDropdown();
-      if (statusNote) examStatus.textContent += ' ' + statusNote;
     }
 
     function extractJsonString(content) {
@@ -2071,16 +2158,18 @@ window.COHESITY_QUESTION_BANK =
     }
 
     async function loadModelsFromAPI() {
-      const apiKey = openaiKeyInput.value.trim();
+      const apiKey = getValidatedApiKey(modelStatus);
       if (!apiKey) {
-        modelStatus.textContent = 'Enter your API key first, then click Refresh to load available models.';
+        // getValidatedApiKey sets its own error message when the key is invalid.
+        // Only show the default prompt when no message was set (empty key case).
+        if (!modelStatus.textContent) modelStatus.textContent = 'Enter your API key first, then click Refresh to load available models.';
         return;
       }
       refreshModelsButton.disabled = true;
       modelStatus.textContent = 'Loading models from your API key…';
       try {
         const response = await fetch('https://api.openai.com/v1/models', {
-          headers: { 'Authorization': 'Bearer ' + apiKey }
+          headers: new Headers({ 'Authorization': 'Bearer ' + apiKey })
         });
         if (!response.ok) throw new Error('API responded ' + response.status);
         const data = await response.json();
@@ -2113,10 +2202,9 @@ window.COHESITY_QUESTION_BANK =
     }
 
     async function appendOpenAIQuestions() {
-      const apiKey = openaiKeyInput.value.trim();
+      const apiKey = getValidatedApiKey(examStatus);
       const model = openaiModelInput.value;
       if (!apiKey) {
-        examStatus.textContent = 'Enter an OpenAI API key before requesting generated questions.';
         return;
       }
 
@@ -2127,10 +2215,10 @@ window.COHESITY_QUESTION_BANK =
 
       try {
         const selectedDomains = getSelectedDomains();
-        const headers = {
-          'Content-Type': 'application/json'
-        };
-        headers['Authorization'] = 'Bearer ' + apiKey;
+        const headers = new Headers({
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + apiKey
+        });
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
           method: 'POST',
           headers,
@@ -2235,11 +2323,42 @@ window.COHESITY_QUESTION_BANK =
     createDomainControls();
     renderHistoryDropdown();
     renderQuestions();
-    if (QUESTION_BANK_ERRORS.length) {
-      examStatus.textContent = `Ready with ${QUESTION_BANK.length} built-in questions. Warning: ${QUESTION_BANK_ERRORS.length} question(s) skipped due to validation errors (see console).`;
-    } else {
-      examStatus.textContent = `Ready with ${QUESTION_BANK.length} built-in questions in the local bank.`;
-    }
+
+    // ── Startup self-test ────────────────────────────────────────────────────
+    (function startupHealthCheck() {
+      const issues = [];
+      if (QUESTION_BANK.length === 0) {
+        issues.push('No built-in questions loaded. Check console for validation errors.');
+      }
+      const domainCheckboxes = domainFilters.querySelectorAll('input[type="checkbox"]');
+      if (!domainCheckboxes.length) {
+        issues.push('Domain filter controls were not created.');
+      }
+      const selectedPool = QUESTION_BANK.filter((q) => getSelectedDomains().includes(q.domain));
+      if (QUESTION_BANK.length > 0 && !selectedPool.length) {
+        issues.push('No questions match the current domain filter selection.');
+      }
+      // Quick smoke-test: attempt to sample 1 question from the pool
+      if (selectedPool.length > 0) {
+        try {
+          const testSample = sampleQuestions(selectedPool, 1);
+          if (!testSample.length || !testSample[0].id) {
+            issues.push('Built-in question sampling returned an unexpected result. Check console.');
+          }
+        } catch (e) {
+          issues.push('Built-in question sampling failed at startup: ' + e.message);
+          console.error('Startup self-test sampling error:', e);
+        }
+      }
+
+      if (issues.length) {
+        examStatus.textContent = '⚠️ App health issue(s): ' + issues.join(' | ') + ' Open DevTools console for details.';
+      } else if (QUESTION_BANK_ERRORS.length) {
+        examStatus.textContent = `Ready with ${QUESTION_BANK.length} built-in questions. Warning: ${QUESTION_BANK_ERRORS.length} question(s) skipped due to validation errors (see console).`;
+      } else {
+        examStatus.textContent = `Ready with ${QUESTION_BANK.length} built-in questions in the local bank.`;
+      }
+    })();
   </script>
 </body>
 </html>
