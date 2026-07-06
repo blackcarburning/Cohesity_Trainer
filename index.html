@@ -2301,18 +2301,18 @@ window.COHESITY_QUESTION_BANK =
 
         // Prepend imported sets to existing history, respecting the history cap
         const newHistory = [...toAdd, ...existingHistory];
-        if (newHistory.length > MAX_HISTORY) newHistory.splice(MAX_HISTORY);
+        if (newHistory.length > MAX_HISTORY) newHistory.splice(MAX_HISTORY, newHistory.length - MAX_HISTORY);
         sessionHistoryFallback = newHistory;
         const saved = lsSet(LS_HISTORY, newHistory);
-
-        renderHistoryDropdown();
-        renderStatsPanel();
 
         let msg = `Imported ${importedCount} question set(s) with ${importedQuestionCount} total questions.`;
         if (skippedDuplicateCount) msg += ` ${skippedDuplicateCount} duplicate(s) skipped.`;
         if (skippedInvalidCount) msg += ` ${skippedInvalidCount} invalid set(s) skipped.`;
         if (!saved) msg += ` ${HISTORY_SAVE_WARNING}`;
         examStatus.textContent = msg;
+
+        renderHistoryDropdown();
+        renderStatsPanel();
       };
 
       reader.onerror = function () {
