@@ -1501,8 +1501,13 @@ window.COHESITY_QUESTION_BANK =
     const APP_VERSION  = 1;
 
     function lsGet(key, fallback = null) {
-      try { const v = localStorage.getItem(key); return v !== null ? JSON.parse(v) : fallback; }
-      catch { return fallback; }
+      try {
+        const v = localStorage.getItem(key);
+        return v !== null ? JSON.parse(v) : fallback;
+      } catch (e) {
+        console.warn('localStorage read/parse failed for key', key, e);
+        return fallback;
+      }
     }
 
     function lsSet(key, value) {
@@ -1545,7 +1550,7 @@ window.COHESITY_QUESTION_BANK =
     function saveToHistory(questions, source, domains, model) {
       const history = loadHistory();
       const entry = {
-        id: `hist-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        id: `hist-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
         generatedAt: new Date().toISOString(),
         source,
         domains: domains || [],
@@ -1572,8 +1577,7 @@ window.COHESITY_QUESTION_BANK =
       placeholder.textContent = '— Select a saved set —';
       historySelect.appendChild(placeholder);
       history.forEach(entry => {
-        const dt = new Date(entry.generatedAt);
-        const dateStr = dt.toLocaleString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+        const dateStr = entry.generatedAt.slice(0, 16).replace('T', ' ');
         const modelPart = entry.model ? ` — ${entry.model}` : '';
         const label = `${dateStr} — ${entry.source}${modelPart} — ${entry.questions.length} questions`;
         const opt = document.createElement('option');
@@ -1595,7 +1599,7 @@ window.COHESITY_QUESTION_BANK =
       }
       const questions = entry.questions.map((q, i) => ({
         ...q,
-        instanceId: `${q.id || 'q'}-loaded-${i + 1}-${Math.random().toString(36).slice(2, 8)}`
+        instanceId: `${q.id ?? 'q'}-loaded-${i + 1}-${Math.random().toString(36).slice(2, 8)}`
       }));
       resetExam(questions);
       const dt = new Date(entry.generatedAt).toLocaleString();
@@ -1626,7 +1630,7 @@ window.COHESITY_QUESTION_BANK =
           model: e.model,
           questionCount: e.questions ? e.questions.length : 0
         })),
-        note: 'API key is intentionally excluded. Re-enter it in the app after importing this config.'
+        note: 'API key is intentionally excluded from this export. This file is for reference and manual preference restoration only — there is no import feature.'
       };
       const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
@@ -1981,7 +1985,8 @@ window.COHESITY_QUESTION_BANK =
           throw new Error(`${prefix} correctAnswerIndexes must be fewer than all choices.`);
         }
         // Enforce supported patterns: 2 of 4 or 3 of 5
-        const validPattern = (numChoices === 4 && uniqueIndexes.length === 2) || (numChoices === 5 && uniqueIndexes.length === 3);
+        const SUPPORTED_PATTERNS = [[4, 2], [5, 3]];
+        const validPattern = SUPPORTED_PATTERNS.some(([c, a]) => numChoices === c && uniqueIndexes.length === a);
         if (!validPattern) {
           throw new Error(`${prefix} multi-select must use 2-of-4 or 3-of-5 pattern (got ${uniqueIndexes.length} of ${numChoices}).`);
         }

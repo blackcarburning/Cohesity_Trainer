@@ -43,7 +43,7 @@ Open `index.html` in a browser to use the Cohesity Certified Architect Expert pr
   - Metadata for all saved history entries (id, date, source, model, question count)
   - Schema version and export timestamp
 - **The API key is intentionally excluded** from the export file for security. Re-enter it manually after loading the config on another machine.
-- The exported file can be used as a reference to manually restore preferences.
+- The exported file can be used as a reference to manually restore preferences on another machine. There is no import feature.
 
 ### Multi-select "Select all that apply" questions
 - Questions with multiple correct answers are labelled **"Select all that apply (N of M)."** in the UI, for example:
