@@ -1138,11 +1138,284 @@ window.COHESITY_QUESTION_BANK =
     "correctAnswerIndex": 3,
     "explanation": "The architect should connect technical findings back to design assumptions, workflows, and business requirements.",
     "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "security-13",
+    "domain": "Security-focused Solutions",
+    "question": "A security team is reviewing a FortKnox design and asks why vault access is resilient against credential abuse. Which two design points should you emphasize? (Select two.)",
+    "choices": [
+      "Vault operations are mediated through control-plane APIs that issue short-lived, restricted credentials for the operation window.",
+      "Storage administrators can permanently store cloud-vault write keys on production clusters to avoid rotation overhead.",
+      "Customer traffic can bypass the control service and call the object-store APIs directly for restore and vault management.",
+      "Privileges are intentionally scoped to least privilege for the vault workflow rather than broad bucket-level administration."
+    ],
+    "correctAnswerIndexes": [0, 3],
+    "selectCount": 2,
+    "explanation": "FortKnox emphasizes tightly scoped, temporary credentials and mediated vault access patterns rather than persistent broad credentials.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "architecture-13",
+    "domain": "Architecture",
+    "question": "A media customer wants to reclaim local capacity while preserving long-term retention and occasional restore from cloud object storage. Which feature best fits this requirement?",
+    "choices": [
+      "DataLock",
+      "CloudTier",
+      "CloudArchive",
+      "FortKnox"
+    ],
+    "correctAnswerIndex": 2,
+    "explanation": "CloudArchive is intended for long-term retention in external cloud/object storage targets with retrieval when needed.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "discovery-13",
+    "domain": "Discovery & Design",
+    "question": "You need a Helios view to support a multi-cluster expansion plan across many regions. Which report is most directly aligned to capacity-growth analysis?",
+    "choices": [
+      "Storage Consumption By System",
+      "Storage Consumption By View",
+      "Data Transferred to External Targets",
+      "Storage Consumption By Organization"
+    ],
+    "correctAnswerIndex": 0,
+    "explanation": "System-level storage consumption trends are the most direct starting point for estate-wide expansion planning.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "security-14",
+    "domain": "Security-focused Solutions",
+    "question": "A customer wants to modernize backup architecture around 3-2-1-1-0 principles. Which three Cohesity capabilities best map to that objective? (Select three.)",
+    "choices": [
+      "DataProtect for policy-driven protected copies and recoveries",
+      "CloudArchive for off-site copy placement in object storage",
+      "FortKnox for isolated cyber-vault resiliency",
+      "SmartFiles front-end namespace tuning as the sole ransomware control"
+    ],
+    "correctAnswerIndexes": [0, 1, 2],
+    "selectCount": 3,
+    "explanation": "A combined design typically uses operational protection, off-site retention, and isolated vaulting for cyber resilience objectives.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "architecture-14",
+    "domain": "Architecture",
+    "question": "For Amazon EC2 protection with DataProtect as a Service, which two statements are accurate design guidance? (Select two.)",
+    "choices": [
+      "Native snapshot-based protection can keep snapshot data in the source account/region context of that workflow.",
+      "Backup ingestion workflows can provide additional isolated copy options and granular recovery paths.",
+      "The service can only protect EC2 when all snapshots are immediately converted into on-premises SmartFiles shares.",
+      "Cross-region or alternate-location copy strategy is irrelevant once native snapshots are enabled."
+    ],
+    "correctAnswerIndexes": [0, 1],
+    "selectCount": 2,
+    "explanation": "Architects commonly distinguish native snapshot behavior from ingest-based workflows that can add additional resiliency and recovery options.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "discovery-14",
+    "domain": "Discovery & Design",
+    "question": "A customer must operate clusters in a dark site with no SaaS dependency. Which two management approaches align with this requirement? (Select two.)",
+    "choices": [
+      "Helios Self-Managed",
+      "Multi-Cluster Manager",
+      "Helios SaaS Standard-only tenancy",
+      "Delegating all management to cloud-hosted automation jobs"
+    ],
+    "correctAnswerIndexes": [0, 1],
+    "selectCount": 2,
+    "explanation": "Dark-site designs use self-managed tooling and local management controls rather than SaaS-only dependencies.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "troubleshooting-13",
+    "domain": "Gap Analysis & Troubleshooting",
+    "question": "You run health diagnostics to isolate instability in a multi-node cluster. Which outcome is most useful from service-check style commands?",
+    "choices": [
+      "Direct packet captures from every leaf-spine switch in the datacenter fabric",
+      "A quick view of service health/state that helps identify degraded components for deeper investigation",
+      "A complete retroactive replay of all backup I/O to prove host-level queue depth saturation",
+      "Automatic remediation that permanently restarts every service without operator confirmation"
+    ],
+    "correctAnswerIndex": 1,
+    "explanation": "Health-check tooling is meant to quickly expose service state so operators can focus follow-up troubleshooting.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "architecture-15",
+    "domain": "Architecture",
+    "question": "Switch ports are configured for jumbo-frame MTU 9124 in your design workshop. Which cluster network MTU value is typically configured on Cohesity interfaces?",
+    "choices": [
+      "9000",
+      "9124",
+      "9216",
+      "8999"
+    ],
+    "correctAnswerIndex": 0,
+    "explanation": "A 9000-byte host MTU is the common endpoint setting when upstream switching is configured to carry jumbo frames.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "architecture-16",
+    "domain": "Architecture",
+    "question": "A DFS environment needs consistent protection with minimal namespace disruption. Which architecture direction is most defensible?",
+    "choices": [
+      "Replace DFS referrals with direct SmartFiles user shares immediately and retire the existing namespace.",
+      "Protect the underlying Windows file servers and DFS-related components with policy and recovery workflows that preserve namespace consistency.",
+      "Mount branch NFS targets directly into DFS and treat SmartFiles as an inline transactional namespace backend.",
+      "Disable system-state protection to reduce impact during backup windows."
+    ],
+    "correctAnswerIndex": 1,
+    "explanation": "Protecting the underlying DFS infrastructure and associated data/services is generally the sound approach for recoverable consistency.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "integrations-13",
+    "domain": "Third-party Integrations",
+    "question": "A SOC architect is planning Microsoft Sentinel integration with Cohesity Data Cloud. Which two planning themes are expected? (Select two.)",
+    "choices": [
+      "Establish required identity/API access components between platforms.",
+      "Use Sentinel data connector and workflow automation objects where the integration pattern requires them.",
+      "Disable API authentication to allow unrestricted telemetry ingestion.",
+      "Remove RBAC constraints for all users to simplify alert triage."
+    ],
+    "correctAnswerIndexes": [0, 1],
+    "selectCount": 2,
+    "explanation": "Sentinel integrations usually require explicit API/identity configuration and connector/playbook workflow planning.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "architecture-17",
+    "domain": "Architecture",
+    "question": "A customer wants to land third-party backup data onto SmartFiles. Where would SpanFS/SnapTree architecture most likely provide visible value?",
+    "choices": [
+      "Throughput and efficient incremental data handling at scale",
+      "Replacing all encryption controls managed by the security team",
+      "Offloading every archive operation directly to object storage without policies",
+      "Automatically rewriting source-backup metadata into vSphere tags"
+    ],
+    "correctAnswerIndex": 0,
+    "explanation": "SmartFiles on the Cohesity platform is often positioned for high-throughput file workflows with efficient snapshot/incremental behavior.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "discovery-15",
+    "domain": "Discovery & Design",
+    "question": "A compliance program requires monthly archive to cloud object storage with seven-year retention. Which three implementation actions are appropriate? (Select three.)",
+    "choices": [
+      "Create/archive policy schedules that run approximately monthly with seven-year retention.",
+      "Configure and register an external archival target in the chosen cloud object store.",
+      "Bind the relevant protected data to the archive-enabled protection policy.",
+      "Rely only on cloud-console lifecycle rules and skip cluster-side archive configuration."
+    ],
+    "correctAnswerIndexes": [0, 1, 2],
+    "selectCount": 3,
+    "explanation": "Meeting retention goals requires policy schedule, external target configuration, and workload association from the Cohesity side.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "integrations-14",
+    "domain": "Third-party Integrations",
+    "question": "You need to assign newly discovered VMware VMs to a default protection workflow every day. Why is the Cohesity API the best primary mechanism?",
+    "choices": [
+      "The API enables repeatable automation and reduces manual assignment effort.",
+      "The UI cannot display newly discovered VMware objects.",
+      "Protection jobs must be destroyed and recreated for each VM assignment.",
+      "Cohesity blocks all CLI and UI assignment methods in modern versions."
+    ],
+    "correctAnswerIndex": 0,
+    "explanation": "The API is intended for repeatable automation patterns such as daily object-to-policy assignment workflows.",
+    "citationTitle": "Cohesity Developer Portal",
+    "citationUrl": "https://developer.cohesity.com/"
+  },
+  {
+    "id": "security-15",
+    "domain": "Security-focused Solutions",
+    "question": "A customer wants hardened administrator access aligned with common security frameworks. Which three controls should be combined? (Select three.)",
+    "choices": [
+      "Federated SAML authentication with enterprise identity provider",
+      "AD group-based RBAC role assignment with least privilege",
+      "MFA enforcement for privileged administrative access",
+      "Shared local admin accounts to simplify emergency operations"
+    ],
+    "correctAnswerIndexes": [0, 1, 2],
+    "selectCount": 3,
+    "explanation": "Hardening generally combines SSO federation, group-based RBAC, and MFA for privileged access controls.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "integrations-15",
+    "domain": "Third-party Integrations",
+    "question": "An ESXi host has multiple VMkernel interfaces and backup traffic must use a specific path. Which two supported adjustments can help direct NFC backup flow? (Select two.)",
+    "choices": [
+      "Configure supported host-mapping options in Cohesity appliance/cluster management.",
+      "Use backup-network tagging conventions in vSphere where supported for NFC path selection.",
+      "Edit hosts files directly on every node as the standard production method.",
+      "Force traffic with unmanaged firewall NAT rules that are unknown to source configuration."
+    ],
+    "correctAnswerIndexes": [0, 1],
+    "selectCount": 2,
+    "explanation": "Use supported host mapping and vSphere backup-network tagging guidance rather than unmanaged node-level file edits or ad hoc NAT workarounds.",
+    "citationTopic": "Cohesity certification overview / study topic"
   }
 ];
   </script>
   <script>
-    const QUESTION_BANK = Array.isArray(window.COHESITY_QUESTION_BANK) ? window.COHESITY_QUESTION_BANK : [];
+    function normalizeQuestion(question, prefix = 'Question') {
+      if (!question || typeof question !== 'object') throw new Error(`${prefix} is not an object.`);
+      if (!Array.isArray(question.choices) || question.choices.length !== 4) throw new Error(`${prefix} must include exactly 4 choices.`);
+      const hasSingle = Number.isInteger(question.correctAnswerIndex);
+      const hasMulti = Array.isArray(question.correctAnswerIndexes);
+      if (!hasSingle && !hasMulti) throw new Error(`${prefix} must include correctAnswerIndex or correctAnswerIndexes.`);
+
+      let indexes;
+      if (hasMulti) {
+        const deduped = [...new Set(question.correctAnswerIndexes)];
+        if (deduped.length !== question.correctAnswerIndexes.length || deduped.some((value) => !Number.isInteger(value) || value < 0 || value >= question.choices.length)) {
+          throw new Error(`${prefix} has invalid correctAnswerIndexes.`);
+        }
+        indexes = deduped.sort((a, b) => a - b);
+      } else {
+        if (question.correctAnswerIndex < 0 || question.correctAnswerIndex >= question.choices.length) {
+          throw new Error(`${prefix} has invalid correctAnswerIndex.`);
+        }
+        indexes = [question.correctAnswerIndex];
+      }
+
+      const selectCount = Number.isInteger(question.selectCount) && question.selectCount > 0 ? question.selectCount : indexes.length;
+      return {
+        ...question,
+        correctAnswerIndex: indexes[0],
+        correctAnswerIndexes: indexes,
+        selectCount
+      };
+    }
+
+    function getQuestionSelectCount(question) {
+      return Number.isInteger(question.selectCount) && question.selectCount > 0 ? question.selectCount : question.correctAnswerIndexes.length;
+    }
+
+    function getSavedAnswerIndexes(questionId) {
+      const saved = state.answers.get(questionId);
+      return Array.isArray(saved) ? saved : [];
+    }
+
+    function setSavedAnswerIndexes(questionId, indexes) {
+      if (indexes.length) {
+        state.answers.set(questionId, [...new Set(indexes)].sort((a, b) => a - b));
+      } else {
+        state.answers.delete(questionId);
+      }
+    }
+
+    function isExactAnswerMatch(selectedIndexes, correctIndexes) {
+      if (selectedIndexes.length !== correctIndexes.length) return false;
+      return selectedIndexes.every((value, index) => value === correctIndexes[index]);
+    }
+
+    const QUESTION_BANK = Array.isArray(window.COHESITY_QUESTION_BANK)
+      ? window.COHESITY_QUESTION_BANK.map((question, index) => normalizeQuestion(question, `Built-in question ${index + 1}`))
+      : [];
     const DOMAIN_ORDER = [
       'Architecture',
       'Discovery & Design',
@@ -1217,7 +1490,11 @@ window.COHESITY_QUESTION_BANK =
         if (!available.length) available = shuffle(pool);
         picked.push({ ...available.pop() });
       }
-      return picked.map((item, index) => ({ ...item, instanceId: `${item.id}-${index + 1}-${Math.random().toString(36).slice(2, 8)}`, source: item.source || 'Built-in' }));
+      return picked.map((item, index) => normalizeQuestion({
+        ...item,
+        instanceId: `${item.id}-${index + 1}-${Math.random().toString(36).slice(2, 8)}`,
+        source: item.source || 'Built-in'
+      }, `Sampled question ${index + 1}`));
     }
 
     function formatTime(ms) {
@@ -1312,7 +1589,9 @@ window.COHESITY_QUESTION_BANK =
         title.textContent = `${index + 1}. ${question.question}`;
         const note = document.createElement('p');
         note.className = 'inline-note';
-        note.textContent = state.submitted ? 'Submitted result shown below.' : 'Select one answer. Use Reveal answer if you want to self-check before submitting.';
+        const selectCount = getQuestionSelectCount(question);
+        const instruction = selectCount === 1 ? 'Select one answer.' : `Select ${selectCount} answers.`;
+        note.textContent = state.submitted ? 'Submitted result shown below.' : `${instruction} Use Reveal answer if you want to self-check before submitting.`;
         titleWrap.append(title, note);
 
         const pills = document.createElement('div');
@@ -1331,19 +1610,27 @@ window.COHESITY_QUESTION_BANK =
         question.choices.forEach((choice, choiceIndex) => {
           const label = document.createElement('label');
           label.className = 'choice';
-          const savedAnswer = state.answers.get(question.instanceId);
-          const isCorrect = choiceIndex === question.correctAnswerIndex;
+          const savedAnswerIndexes = getSavedAnswerIndexes(question.instanceId);
+          const isCorrect = question.correctAnswerIndexes.includes(choiceIndex);
           if (state.submitted && isCorrect) label.classList.add('correct');
-          if (state.submitted && savedAnswer === choiceIndex && !isCorrect) label.classList.add('incorrect');
+          if (state.submitted && savedAnswerIndexes.includes(choiceIndex) && !isCorrect) label.classList.add('incorrect');
 
           const input = document.createElement('input');
-          input.type = 'radio';
+          input.type = question.correctAnswerIndexes.length > 1 ? 'checkbox' : 'radio';
           input.name = `question-${question.instanceId}`;
           input.value = String(choiceIndex);
-          input.checked = savedAnswer === choiceIndex;
+          input.checked = savedAnswerIndexes.includes(choiceIndex);
           input.disabled = state.submitted;
           input.addEventListener('change', () => {
-            state.answers.set(question.instanceId, choiceIndex);
+            const current = getSavedAnswerIndexes(question.instanceId);
+            if (input.type === 'checkbox') {
+              const next = input.checked
+                ? [...current, choiceIndex]
+                : current.filter((indexValue) => indexValue !== choiceIndex);
+              setSavedAnswerIndexes(question.instanceId, next);
+            } else {
+              setSavedAnswerIndexes(question.instanceId, [choiceIndex]);
+            }
           });
 
           const text = document.createElement('span');
@@ -1374,9 +1661,10 @@ window.COHESITY_QUESTION_BANK =
         answerPanel.classList.toggle('visible', showPanel);
 
         const answerTitle = document.createElement('strong');
-        const selected = state.answers.get(question.instanceId);
-        const selectedLabel = Number.isInteger(selected) ? question.choices[selected] : 'No answer selected';
-        answerTitle.textContent = `Correct answer: ${question.choices[question.correctAnswerIndex]}`;
+        const selected = getSavedAnswerIndexes(question.instanceId);
+        const selectedLabels = selected.length ? selected.map((choiceIndex) => question.choices[choiceIndex]).join('; ') : 'No answer selected';
+        const correctLabels = question.correctAnswerIndexes.map((choiceIndex) => question.choices[choiceIndex]).join('; ');
+        answerTitle.textContent = question.correctAnswerIndexes.length > 1 ? `Correct answers: ${correctLabels}` : `Correct answer: ${correctLabels}`;
         const explanation = document.createElement('p');
         explanation.textContent = question.explanation;
         const meta = document.createElement('ul');
@@ -1384,8 +1672,11 @@ window.COHESITY_QUESTION_BANK =
 
         if (state.submitted) {
           const selectedItem = document.createElement('li');
-          selectedItem.textContent = `Your answer: ${selectedLabel}`;
+          selectedItem.textContent = question.correctAnswerIndexes.length > 1 ? `Your answers: ${selectedLabels}` : `Your answer: ${selectedLabels}`;
           meta.appendChild(selectedItem);
+          const correctItem = document.createElement('li');
+          correctItem.textContent = question.correctAnswerIndexes.length > 1 ? `Correct answers: ${correctLabels}` : `Correct answer: ${correctLabels}`;
+          meta.appendChild(correctItem);
         }
 
         const citationItem = document.createElement('li');
@@ -1401,14 +1692,17 @@ window.COHESITY_QUESTION_BANK =
     }
 
     function scoreExam() {
-      return state.questions.reduce((score, question) => score + (state.answers.get(question.instanceId) === question.correctAnswerIndex ? 1 : 0), 0);
+      return state.questions.reduce((score, question) => {
+        const selected = getSavedAnswerIndexes(question.instanceId);
+        return score + (isExactAnswerMatch(selected, question.correctAnswerIndexes) ? 1 : 0);
+      }, 0);
     }
 
     function submitExam(expired = false) {
       if (!state.questions.length || state.submitted) return;
       state.submitted = true;
       const score = scoreExam();
-      const answered = state.answers.size;
+      const answered = state.questions.reduce((count, question) => count + (getSavedAnswerIndexes(question.instanceId).length ? 1 : 0), 0);
       const total = state.questions.length;
       setSummary(expired ? `Time expired. The exam was auto-submitted. Score: ${score}/${total}. Answered: ${answered}/${total}.` : `Exam submitted. Score: ${score}/${total}. Answered: ${answered}/${total}.`, expired);
       examStatus.textContent = expired ? 'Time expired and the exam has been auto-submitted.' : 'Exam submitted. Review explanations and citations below.';
@@ -1461,8 +1755,31 @@ window.COHESITY_QUESTION_BANK =
       if (!Array.isArray(question.choices) || question.choices.length !== 4 || question.choices.some((choice) => typeof choice !== 'string' || !choice.trim())) {
         throw new Error(`${prefix} must include exactly 4 non-empty choices.`);
       }
-      if (!Number.isInteger(question.correctAnswerIndex) || question.correctAnswerIndex < 0 || question.correctAnswerIndex > 3) {
-        throw new Error(`${prefix} must include a correctAnswerIndex from 0 to 3.`);
+      const hasSingle = Number.isInteger(question.correctAnswerIndex);
+      const hasMulti = Array.isArray(question.correctAnswerIndexes);
+      if (!hasSingle && !hasMulti) {
+        throw new Error(`${prefix} must include correctAnswerIndex or correctAnswerIndexes.`);
+      }
+      if (hasSingle && (question.correctAnswerIndex < 0 || question.correctAnswerIndex > 3)) {
+        throw new Error(`${prefix} has an out-of-range correctAnswerIndex.`);
+      }
+      if (hasMulti) {
+        if (!question.correctAnswerIndexes.length) {
+          throw new Error(`${prefix} must include at least one value in correctAnswerIndexes.`);
+        }
+        const uniqueIndexes = [...new Set(question.correctAnswerIndexes)];
+        if (uniqueIndexes.length !== question.correctAnswerIndexes.length) {
+          throw new Error(`${prefix} correctAnswerIndexes must be unique.`);
+        }
+        if (uniqueIndexes.some((value) => !Number.isInteger(value) || value < 0 || value > 3)) {
+          throw new Error(`${prefix} has out-of-range values in correctAnswerIndexes.`);
+        }
+        if (uniqueIndexes.length < 2) {
+          throw new Error(`${prefix} correctAnswerIndexes must include at least two answers.`);
+        }
+        if (uniqueIndexes.length >= question.choices.length) {
+          throw new Error(`${prefix} correctAnswerIndexes must be fewer than all choices.`);
+        }
       }
       if (typeof question.explanation !== 'string' || !question.explanation.trim()) throw new Error(`${prefix} is missing an explanation.`);
       if (typeof question.domain !== 'string' || !question.domain.trim()) throw new Error(`${prefix} is missing a domain.`);
@@ -1471,18 +1788,21 @@ window.COHESITY_QUESTION_BANK =
       if (!hasUrlCitation && !hasTopicCitation) {
         throw new Error(`${prefix} must include either citationTitle + citationUrl or citationTopic.`);
       }
-      return {
+      const normalizedQuestion = normalizeQuestion({
         id: `openai-${Date.now()}-${index + 1}`,
         domain: question.domain.trim(),
         question: question.question.trim(),
         choices: question.choices.map((choice) => choice.trim()),
-        correctAnswerIndex: question.correctAnswerIndex,
+        correctAnswerIndex: hasSingle ? question.correctAnswerIndex : undefined,
+        correctAnswerIndexes: hasMulti ? question.correctAnswerIndexes : undefined,
+        selectCount: Number.isInteger(question.selectCount) ? question.selectCount : undefined,
         explanation: question.explanation.trim(),
         citationTitle: hasUrlCitation ? question.citationTitle.trim() : undefined,
         citationUrl: hasUrlCitation ? question.citationUrl.trim() : undefined,
         citationTopic: hasTopicCitation ? question.citationTopic.trim() : undefined,
         source: 'OpenAI'
-      };
+      }, prefix);
+      return normalizedQuestion;
     }
 
     function isChatCapableModel(id) {
@@ -1573,7 +1893,9 @@ window.COHESITY_QUESTION_BANK =
                 content: [
                   'Create exactly 50 Cohesity Certified Architect Expert practice questions.',
                   `Allowed domains: ${selectedDomains.join(', ') || DOMAIN_ORDER.join(', ')}.`,
-                  'Use this JSON schema exactly: {"questions":[{"domain":"...","question":"...","choices":["A","B","C","D"],"correctAnswerIndex":0,"explanation":"...","citationTitle":"...","citationUrl":"https://..."}]}',
+                  'Use this JSON schema exactly: {"questions":[{"domain":"...","question":"...","choices":["A","B","C","D"],"correctAnswerIndex":0,"correctAnswerIndexes":[0,2],"selectCount":2,"explanation":"...","citationTitle":"...","citationUrl":"https://..."}]}.',
+                  'Each question must include either correctAnswerIndex (single-answer) or correctAnswerIndexes (multi-select).',
+                  'Include a realistic mix of scenario-based single-answer and multi-select questions (for example select two/select three).',
                   'If you cannot provide an official Cohesity citation URL for a question, use citationTopic: "Cohesity certification overview / study topic" instead of citationTitle/citationUrl.',
                   'Keep questions aligned to architecture, design, security, integrations, and troubleshooting topics from the Cohesity Architect Expert exam. Avoid unsupported claims and prefer official Cohesity docs/support/developer/product pages where possible.'
                 ].join(' ')
