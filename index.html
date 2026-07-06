@@ -1367,6 +1367,7 @@ window.COHESITY_QUESTION_BANK =
       const hasSingle = Number.isInteger(question.correctAnswerIndex);
       const hasMulti = Array.isArray(question.correctAnswerIndexes);
       if (!hasSingle && !hasMulti) throw new Error(`${prefix} must include correctAnswerIndex or correctAnswerIndexes.`);
+      if (hasSingle && hasMulti) throw new Error(`${prefix} must not include both correctAnswerIndex and correctAnswerIndexes.`);
 
       let indexes;
       if (hasMulti) {
@@ -1376,6 +1377,12 @@ window.COHESITY_QUESTION_BANK =
         }
         if (deduped.some((value) => !Number.isInteger(value) || value < 0 || value >= question.choices.length)) {
           throw new Error(`${prefix} has out-of-range values in correctAnswerIndexes.`);
+        }
+        if (deduped.length < 2) {
+          throw new Error(`${prefix} correctAnswerIndexes must include at least two answers.`);
+        }
+        if (deduped.length >= question.choices.length) {
+          throw new Error(`${prefix} correctAnswerIndexes must be fewer than all choices.`);
         }
         indexes = deduped.sort((a, b) => a - b);
       } else {
@@ -1398,7 +1405,7 @@ window.COHESITY_QUESTION_BANK =
     }
 
     function getQuestionSelectCount(question) {
-      return Number.isInteger(question.selectCount) && question.selectCount > 0 ? question.selectCount : question.correctAnswerIndexes.length;
+      return question.selectCount;
     }
 
     function getSavedAnswerIndexes(questionId) {
@@ -1630,6 +1637,12 @@ window.COHESITY_QUESTION_BANK =
           input.addEventListener('change', () => {
             const current = getSavedAnswerIndexes(question.instanceId);
             if (input.type === 'checkbox') {
+              const selectCount = getQuestionSelectCount(question);
+              if (input.checked && current.length >= selectCount && !current.includes(choiceIndex)) {
+                input.checked = false;
+                examStatus.textContent = `Question ${index + 1}: select up to ${selectCount} answers before submitting.`;
+                return;
+              }
               const next = input.checked
                 ? [...current, choiceIndex]
                 : current.filter((indexValue) => indexValue !== choiceIndex);
