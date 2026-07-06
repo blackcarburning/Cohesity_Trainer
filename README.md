@@ -18,7 +18,8 @@ Open `index.html` in a browser to use the Cohesity Certified Architect Expert pr
 - Right-side ad hoc LLM lookup box for quick study questions using the same API key/model settings.
 - All generated exam sets are saved to browser local storage and appear in the history dropdown.
 - OpenAI API key and selected model are remembered in local storage for convenience.
-- Export your configuration (model, domains, timer, history metadata, and full saved question sets including AI-generated ones) to a JSON file.
+- Export your configuration (model, domains, timer, history metadata, and full saved question sets including AI-generated ones) to a JSON file for backup or sharing.
+- Import a previously exported configuration file to restore AI-generated question sets into browser history so they appear in the saved-set dropdown immediately.
 - Question bank & memory stats panel shows built-in bank count, current exam info, and saved history totals.
 
 ### AI exam generation
@@ -27,6 +28,7 @@ Open `index.html` in a browser to use the Cohesity Certified Architect Expert pr
 - After validation, each AI question's choices are shuffled post-receipt to avoid fixed correct-answer positions from model output ordering.
 - The AI prompt explicitly targets Cohesity product-level technical detail, architectural decision-making, supported workflow differences, troubleshooting/gap-analysis reasoning, and scenario-based design questions.
 - The AI prompt also requires plausible Cohesity-adjacent distractors that are wrong for a clear reason (scope, workflow stage, deployment model, feature purpose, or design implication), rather than silly or unrelated answers.
+- Approximately 10% of the 70 requested questions (roughly 7) are technical implementation-detail questions. These cover topics such as SpanFS/filesystem behaviour, UI/Siren health-check workflows, Cohesity services/components (for example iris, magneto, bridge), their purpose, important states/values, and troubleshooting or capacity/performance signals. Official Cohesity documentation is used as the source where available, and questions remain architect-relevant rather than raw command trivia.
 - Generated questions with obviously silly distractor terms (for example `cafeteria`, `rack screw`, `coffee`, or `printer toner`) are rejected during validation while maintaining partial-generation fallback behavior.
 - When at least 50 valid AI questions are available, the app loads the first 50 valid AI questions as the current exam.
 - When fewer than 50 valid AI questions are available:
@@ -111,7 +113,19 @@ Open `index.html` in a browser to use the Cohesity Certified Architect Expert pr
   - Full question data for all saved sets including AI-generated ones (`savedQuestionSets` field)
   - Schema version and export timestamp
 - **The API key is intentionally excluded** from the export file for security. Re-enter it manually after loading the config on another machine.
-- The exported file can be used as a reference to manually restore preferences on another machine. There is no import feature.
+- The exported file includes all AI-generated question sets with full question data so it can be shared with other users who can then import it.
+
+### Import configuration
+- Click **Import configuration** and select a `.json` file previously exported by this app.
+- The import reads the file entirely in the browser — no data is sent to any server.
+- **API keys are never imported**, even if an exported file somehow contained one.
+- Valid saved question sets from the file are merged into your existing browser history. Existing sets are not erased.
+- Duplicate sets (matched by their unique `id`) are skipped automatically to prevent double-importing.
+- Malformed question sets are skipped with a warning; the rest of the import continues.
+- After import, the saved-set dropdown and stats panel refresh immediately.
+- Imported AI-generated sets appear in the dropdown labelled **AI generated** and can be loaded, scored, and reviewed exactly like locally generated sets.
+- A clear success or error message is shown in the exam status bar after the import completes.
+- If local storage fails during import, the sets are still available for the current session and a warning is shown.
 
 ### Multi-select "Select all that apply" questions
 - Questions with multiple correct answers are labelled **"Select all that apply (N of M)."** in the UI, for example:
