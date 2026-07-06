@@ -21,7 +21,7 @@ Open `index.html` in a browser to use the Cohesity Certified Architect Expert pr
 
 ### AI exam generation
 - Click **Generate 50 AI questions** to request 50 fresh questions from OpenAI.
-- The generated set **replaces** the current exam — it does not append to it.
+- The generated set **replaces** the current exam — it does not append to it. The previous exam is lost unless it was already saved as a history set.
 - Answers, reveals, submission state, and timer are all reset when the new exam loads.
 - The generated set is immediately saved to browser local storage with source label **AI generated**.
 - It appears at the top of the saved-set dropdown so you can reload it at any time.
