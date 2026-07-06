@@ -1366,8 +1366,8 @@ window.COHESITY_QUESTION_BANK =
       if (!Array.isArray(question.choices) || question.choices.length !== 4) throw new Error(`${prefix} must include exactly 4 choices.`);
       const hasSingle = Number.isInteger(question.correctAnswerIndex);
       const hasMulti = Array.isArray(question.correctAnswerIndexes);
-      if (!hasSingle && !hasMulti) throw new Error(`${prefix} must include correctAnswerIndex or correctAnswerIndexes.`);
       if (hasSingle && hasMulti) throw new Error(`${prefix} must not include both correctAnswerIndex and correctAnswerIndexes.`);
+      if (!hasSingle && !hasMulti) throw new Error(`${prefix} must include correctAnswerIndex or correctAnswerIndexes.`);
 
       let indexes;
       if (hasMulti) {
@@ -1638,7 +1638,7 @@ window.COHESITY_QUESTION_BANK =
             const current = getSavedAnswerIndexes(question.instanceId);
             if (input.type === 'checkbox') {
               const selectCount = getQuestionSelectCount(question);
-              if (input.checked && current.length >= selectCount && !current.includes(choiceIndex)) {
+              if (input.checked && current.length >= selectCount) {
                 input.checked = false;
                 examStatus.textContent = `Question ${index + 1}: select up to ${selectCount} answers before submitting.`;
                 return;
