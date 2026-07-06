@@ -10,7 +10,7 @@ Open `index.html` in a browser to use the Cohesity Certified Architect Expert pr
 - Reveal or hide answers during practice and review your selected answer(s), correct answer(s), explanations, and citations after submission.
 - Domain filters for architecture, discovery and design, security, integrations, and troubleshooting.
 - Built-in question bank uses plausible distractors (true Cohesity facts out of context) and distributes the correct answer evenly across all four positions.
-- Provide an OpenAI API key to append 50 additional AI-generated questions client-side.
+- Provide an OpenAI API key to generate a 50-question OpenAI batch client-side; if an exam is already loaded, the new batch is appended immediately.
 - Right-side ad hoc LLM lookup box for quick study questions using the same API key/model settings.
 - All generated exam sets are saved to browser local storage and appear in the history dropdown.
 - OpenAI API key and selected model are remembered in local storage for convenience.
@@ -19,7 +19,7 @@ Open `index.html` in a browser to use the Cohesity Certified Architect Expert pr
 ### OpenAI model selector
 - A dropdown lists curated model options including `gpt-4.1-mini` (default), `gpt-4.1`, `gpt-4o-mini`, `gpt-4o`, and frontier models (`gpt-5.4-nano`, `gpt-5.4-mini`, `gpt-5.4`, `gpt-5.5`).
 - Click **Refresh available models from API key** after entering your API key to replace the curated list with the models actually available on your key (filtered to chat-capable GPT models). If the refresh fails, the curated defaults are kept and an error message is shown.
-- The selected model is used when clicking **Generate 50 more with OpenAI**.
+- The selected model is used when clicking **Generate 50 with OpenAI (append if active)**.
 - The same selected model is also used by the ad hoc **Ask LLM** lookup panel.
 - OpenAI-generated batches can include a mix of single-answer and multi-select scenario questions.
 
@@ -31,6 +31,7 @@ Open `index.html` in a browser to use the Cohesity Certified Architect Expert pr
 
 ### Exam history (local storage)
 - Every generated 50-question set is saved to browser local storage automatically.
+- Each OpenAI-generated 50-question batch is also saved as its own history entry even when it is appended into a larger current exam.
 - A dropdown above the question list shows saved sets labelled by date/time, source (Built-in or OpenAI), and model (if OpenAI).
 - Select any saved set and click **Load selected set** to reload those questions. Loading a saved set resets all current answer selections.
 - Up to the **25 most recent** sets are kept. Older sets are automatically pruned.
