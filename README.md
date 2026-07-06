@@ -9,7 +9,8 @@ Open `index.html` in a browser to use the Cohesity Certified Architect Expert pr
 - Multi-select questions use "Select all that apply" style instructions with constrained patterns (see below).
 - Reveal or hide answers during practice and review your selected answer(s), correct answer(s), explanations, and citations after submission.
 - Domain filters for architecture, discovery and design, security, integrations, and troubleshooting.
-- Built-in question bank uses plausible distractors (true Cohesity facts out of context) and distributes the correct answer evenly across all four positions.
+- Built-in question bank contains **200** Cohesity Architect Expert-focused questions with plausible Cohesity-adjacent distractors (not joke/obvious wrong answers).
+- About 10% of the built-in bank focuses on implementation-detail topics such as SpanFS/filesystem behavior, services/components, CLI/UI/Siren health checks, and troubleshooting/capacity/performance signals.
 - Provide an OpenAI API key to request 70 AI questions client-side; the app validates them and displays a 50-question AI/fallback exam that **replaces** the current exam.
 - AI generation is tuned for Cohesity product-specific Architect Expert scope, with technical scenario questions and plausible Cohesity-adjacent distractors instead of absurd wrong answers.
 - Answer choices are randomized whenever exams are generated or saved sets are loaded, and correct-answer index metadata is remapped automatically.
@@ -72,6 +73,7 @@ Open `index.html` in a browser to use the Cohesity Certified Architect Expert pr
 
 ### Ad hoc LLM lookup (study assist)
 - The right pane includes an **Ad hoc LLM lookup** text area and **Ask LLM** button for quick conceptual lookups while studying.
+- On larger screens, the right-side OpenAI/ad hoc pane stays sticky while you scroll so lookup remains available near the bottom of long exams.
 - It uses the same browser-side OpenAI API key + selected model as question generation.
 - Missing key, invalid key, empty prompt, request failures, and empty model responses show clear inline errors.
 - Lookup responses are for study assistance and should be verified against official Cohesity documentation for exam-critical facts.
@@ -152,7 +154,7 @@ Open `index.html` in a browser to use the Cohesity Certified Architect Expert pr
 ### Built-in generation does nothing
 - Open **DevTools → Console** (F12) and reload the page. Look for any error messages or the startup health status.
 - If the status bar at the bottom of the controls panel shows a `⚠️ App health issue(s)` message, follow the instructions there.
-- The status bar should show the number of loaded built-in questions (e.g. `Ready with 73 built-in questions`). If it shows 0, the question bank failed to load — check the console for validation errors.
+- The status bar should show the number of loaded built-in questions (e.g. `Ready with 200 built-in questions`). If it shows 0, the question bank failed to load — check the console for validation errors.
 
 ### OpenAI generation reports a fetch header ISO-8859-1 error
 - This error means the API key stored or pasted contains a hidden character (newline, zero-width space, curly quote, or similar) that HTTP headers do not allow.
