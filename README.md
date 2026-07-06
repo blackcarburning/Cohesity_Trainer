@@ -12,6 +12,7 @@ Open `index.html` in a browser to use the Cohesity Certified Architect Expert pr
 - Built-in question bank uses plausible distractors (true Cohesity facts out of context) and distributes the correct answer evenly across all four positions.
 - Provide an OpenAI API key to request 70 AI questions client-side; the app validates them and displays a 50-question AI/fallback exam that **replaces** the current exam.
 - AI generation is tuned for Cohesity product-specific Architect Expert scope, with technical scenario questions and plausible Cohesity-adjacent distractors instead of absurd wrong answers.
+- Answer choices are randomized whenever exams are generated or saved sets are loaded, and correct-answer index metadata is remapped automatically.
 - AI-generated question sets are saved to browser local storage and appear in the history dropdown labelled **AI generated**.
 - Each question card includes an **Explain correct answer with LLM** button for inline study assistance (available after revealing or submitting).
 - Right-side ad hoc LLM lookup box for quick study questions using the same API key/model settings.
@@ -23,6 +24,7 @@ Open `index.html` in a browser to use the Cohesity Certified Architect Expert pr
 ### AI exam generation
 - Click **Generate AI exam (70→50)** to request 70 fresh questions from OpenAI.
 - The app validates each returned question individually, skips invalid entries, and reports returned/valid/skipped/displayed counts in status text.
+- After validation, each AI question's choices are shuffled post-receipt to avoid fixed correct-answer positions from model output ordering.
 - The AI prompt explicitly targets Cohesity product-level technical detail, architectural decision-making, supported workflow differences, troubleshooting/gap-analysis reasoning, and scenario-based design questions.
 - The AI prompt also requires plausible Cohesity-adjacent distractors that are wrong for a clear reason (scope, workflow stage, deployment model, feature purpose, or design implication), rather than silly or unrelated answers.
 - Generated questions with obviously silly distractor terms (for example `cafeteria`, `rack screw`, `coffee`, or `printer toner`) are rejected during validation while maintaining partial-generation fallback behavior.
@@ -33,6 +35,7 @@ Open `index.html` in a browser to use the Cohesity Certified Architect Expert pr
 - The generated set **replaces** the current exam — it does not append to it. The previous exam is lost unless it was already saved as a history set.
 - Answers, reveals, submission state, and timer are all reset when the new exam loads.
 - The generated set is immediately saved to browser local storage with source label **AI generated**.
+- Saved sets retain the shuffled choices and remapped correct-answer index metadata for that generated set.
 - It appears at the top of the saved-set dropdown so you can reload it at any time.
 - If local storage fails, the exam still loads into the current pane and a warning is shown.
 - **The built-in question bank is not modified by AI generation.** AI questions live only in the current session and browser local storage.
@@ -76,6 +79,7 @@ Open `index.html` in a browser to use the Cohesity Certified Architect Expert pr
 - AI-generated sets are saved immediately after successful generation with source label **AI generated**.
 - A dropdown above the question list shows saved sets labelled by date/time, source (Built-in or AI generated), and model (if AI generated).
 - Select any saved set and click **Load selected set** to reload those questions. Loading a saved set resets all current answer selections.
+- Loading a saved set reshuffles answer choices again and remaps correct-answer indexes so answer positions remain randomized each load.
 - Up to the **25 most recent** sets are kept. Older sets are automatically pruned.
 - Click **Clear all history** to remove all saved sets from local storage.
 - If local storage is unavailable (e.g. private browsing mode or quota exceeded), a warning is shown and history falls back to in-session only.
