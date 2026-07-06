@@ -252,6 +252,14 @@
       color: var(--muted);
       font-style: italic;
     }
+    @media (min-width: 980px) {
+      .sticky-pane {
+        position: sticky;
+        top: 16px;
+        max-height: calc(100vh - 24px);
+        overflow: auto;
+      }
+    }
     .sr-only {
       position: absolute;
       width: 1px;
@@ -310,7 +318,7 @@
         <p class="help" id="examStatus" aria-live="polite">No exam generated yet.</p>
       </section>
 
-      <section class="panel" aria-labelledby="openai-heading">
+      <section class="panel sticky-pane" aria-labelledby="openai-heading">
         <h2 id="openai-heading">Generate AI exam</h2>
         <p class="help">Use your own API key to generate a fresh AI exam client-side (requests 70 and displays up to 50 valid questions). <strong>Generating replaces the current exam.</strong> Your API key and selected model are saved in browser local storage for convenience.</p>
         <div class="controls-row">
@@ -1248,7 +1256,10 @@ window.COHESITY_QUESTION_BANK =
       "Customer traffic can bypass the control service and call the object-store APIs directly for restore and vault management.",
       "Privileges are intentionally scoped to least privilege for the vault workflow rather than broad bucket-level administration."
     ],
-    "correctAnswerIndexes": [0, 3],
+    "correctAnswerIndexes": [
+      0,
+      3
+    ],
     "selectCount": 2,
     "explanation": "FortKnox emphasizes tightly scoped, temporary credentials and mediated vault access patterns rather than persistent broad credentials.",
     "citationTopic": "Cohesity certification overview / study topic"
@@ -1292,7 +1303,11 @@ window.COHESITY_QUESTION_BANK =
       "SmartFiles front-end namespace tuning as the sole ransomware control",
       "Helios SaaS as the only required on-premises management interface"
     ],
-    "correctAnswerIndexes": [0, 1, 2],
+    "correctAnswerIndexes": [
+      0,
+      1,
+      2
+    ],
     "selectCount": 3,
     "explanation": "A combined design typically uses operational protection, off-site retention, and isolated vaulting for cyber resilience objectives.",
     "citationTopic": "Cohesity certification overview / study topic"
@@ -1307,7 +1322,10 @@ window.COHESITY_QUESTION_BANK =
       "The service can only protect EC2 when all snapshots are immediately converted into on-premises SmartFiles shares.",
       "Cross-region or alternate-location copy strategy is irrelevant once native snapshots are enabled."
     ],
-    "correctAnswerIndexes": [0, 1],
+    "correctAnswerIndexes": [
+      0,
+      1
+    ],
     "selectCount": 2,
     "explanation": "Architects commonly distinguish native snapshot behavior from ingest-based workflows that can add additional resiliency and recovery options.",
     "citationTopic": "Cohesity certification overview / study topic"
@@ -1322,7 +1340,10 @@ window.COHESITY_QUESTION_BANK =
       "Helios SaaS Standard-only tenancy",
       "Delegating all management to cloud-hosted automation jobs"
     ],
-    "correctAnswerIndexes": [0, 1],
+    "correctAnswerIndexes": [
+      0,
+      1
+    ],
     "selectCount": 2,
     "explanation": "Dark-site designs use self-managed tooling and local management controls rather than SaaS-only dependencies.",
     "citationTopic": "Cohesity certification overview / study topic"
@@ -1379,7 +1400,10 @@ window.COHESITY_QUESTION_BANK =
       "Disable API authentication to allow unrestricted telemetry ingestion.",
       "Remove RBAC constraints for all users to simplify alert triage."
     ],
-    "correctAnswerIndexes": [0, 1],
+    "correctAnswerIndexes": [
+      0,
+      1
+    ],
     "selectCount": 2,
     "explanation": "Sentinel integrations usually require explicit API/identity configuration and connector/playbook workflow planning.",
     "citationTopic": "Cohesity certification overview / study topic"
@@ -1409,7 +1433,11 @@ window.COHESITY_QUESTION_BANK =
       "Rely only on cloud-console lifecycle rules and skip cluster-side archive configuration.",
       "Use DataLock compliance mode as the sole replacement for policy-scheduled archiving."
     ],
-    "correctAnswerIndexes": [0, 1, 2],
+    "correctAnswerIndexes": [
+      0,
+      1,
+      2
+    ],
     "selectCount": 3,
     "explanation": "Meeting retention goals requires policy schedule, external target configuration, and workload association from the Cohesity side.",
     "citationTopic": "Cohesity certification overview / study topic"
@@ -1440,7 +1468,11 @@ window.COHESITY_QUESTION_BANK =
       "Shared local admin accounts to simplify emergency operations",
       "Disabling all API access to reduce the management attack surface"
     ],
-    "correctAnswerIndexes": [0, 1, 2],
+    "correctAnswerIndexes": [
+      0,
+      1,
+      2
+    ],
     "selectCount": 3,
     "explanation": "Hardening generally combines SSO federation, group-based RBAC, and MFA for privileged access controls.",
     "citationTopic": "Cohesity certification overview / study topic"
@@ -1455,9 +1487,1842 @@ window.COHESITY_QUESTION_BANK =
       "Edit hosts files directly on every node as the standard production method.",
       "Force traffic with unmanaged firewall NAT rules that are unknown to source configuration."
     ],
-    "correctAnswerIndexes": [0, 1],
+    "correctAnswerIndexes": [
+      0,
+      1
+    ],
     "selectCount": 2,
     "explanation": "Use supported host mapping and vSphere backup-network tagging guidance rather than unmanaged node-level file edits or ad hoc NAT workarounds.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-001",
+    "domain": "Architecture",
+    "question": "Which Cohesity capability is the best fit when the design requirement is long-term retention copies in cloud object storage?",
+    "choices": [
+      "CloudArchive",
+      "CloudTier",
+      "Replication",
+      "SmartFiles"
+    ],
+    "correctAnswerIndex": 0,
+    "explanation": "CloudArchive is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-002",
+    "domain": "Architecture",
+    "question": "During solution mapping, which option should be selected for this requirement: long-term retention copies in cloud object storage?",
+    "choices": [
+      "Replication",
+      "SmartFiles",
+      "CloudArchive",
+      "CloudTier"
+    ],
+    "correctAnswerIndex": 2,
+    "explanation": "CloudArchive is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-003",
+    "domain": "Architecture",
+    "question": "An architect is asked to design for long-term retention copies in cloud object storage. Which feature should be chosen?",
+    "choices": [
+      "CloudArchive",
+      "CloudTier",
+      "Replication",
+      "SmartFiles"
+    ],
+    "correctAnswerIndex": 0,
+    "explanation": "CloudArchive is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-004",
+    "domain": "Architecture",
+    "question": "Which choice most directly addresses long-term retention copies in cloud object storage without changing the requirement?",
+    "choices": [
+      "Replication",
+      "SmartFiles",
+      "CloudArchive",
+      "CloudTier"
+    ],
+    "correctAnswerIndex": 2,
+    "explanation": "CloudArchive is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-005",
+    "domain": "Architecture",
+    "question": "Which Cohesity capability is the best fit when the design requirement is extend effective on-prem capacity by tiering colder data to cloud object storage?",
+    "choices": [
+      "CloudTier",
+      "CloudArchive",
+      "FortKnox",
+      "Organizations"
+    ],
+    "correctAnswerIndex": 0,
+    "explanation": "CloudTier is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-006",
+    "domain": "Architecture",
+    "question": "During solution mapping, which option should be selected for this requirement: extend effective on-prem capacity by tiering colder data to cloud object storage?",
+    "choices": [
+      "FortKnox",
+      "Organizations",
+      "CloudTier",
+      "CloudArchive"
+    ],
+    "correctAnswerIndex": 2,
+    "explanation": "CloudTier is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-007",
+    "domain": "Architecture",
+    "question": "An architect is asked to design for extend effective on-prem capacity by tiering colder data to cloud object storage. Which feature should be chosen?",
+    "choices": [
+      "CloudTier",
+      "CloudArchive",
+      "FortKnox",
+      "Organizations"
+    ],
+    "correctAnswerIndex": 0,
+    "explanation": "CloudTier is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-008",
+    "domain": "Architecture",
+    "question": "Which choice most directly addresses extend effective on-prem capacity by tiering colder data to cloud object storage without changing the requirement?",
+    "choices": [
+      "FortKnox",
+      "Organizations",
+      "CloudTier",
+      "CloudArchive"
+    ],
+    "correctAnswerIndex": 2,
+    "explanation": "CloudTier is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-009",
+    "domain": "Security-focused Solutions",
+    "question": "Which Cohesity capability is the best fit when the design requirement is isolated cyber-vault copies for ransomware-resilient recovery?",
+    "choices": [
+      "FortKnox",
+      "Replication",
+      "CloudTier",
+      "SmartFiles"
+    ],
+    "correctAnswerIndex": 0,
+    "explanation": "FortKnox is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-010",
+    "domain": "Security-focused Solutions",
+    "question": "During solution mapping, which option should be selected for this requirement: isolated cyber-vault copies for ransomware-resilient recovery?",
+    "choices": [
+      "CloudTier",
+      "SmartFiles",
+      "FortKnox",
+      "Replication"
+    ],
+    "correctAnswerIndex": 2,
+    "explanation": "FortKnox is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-011",
+    "domain": "Security-focused Solutions",
+    "question": "An architect is asked to design for isolated cyber-vault copies for ransomware-resilient recovery. Which feature should be chosen?",
+    "choices": [
+      "FortKnox",
+      "Replication",
+      "CloudTier",
+      "SmartFiles"
+    ],
+    "correctAnswerIndex": 0,
+    "explanation": "FortKnox is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-012",
+    "domain": "Security-focused Solutions",
+    "question": "Which choice most directly addresses isolated cyber-vault copies for ransomware-resilient recovery without changing the requirement?",
+    "choices": [
+      "CloudTier",
+      "SmartFiles",
+      "FortKnox",
+      "Replication"
+    ],
+    "correctAnswerIndex": 2,
+    "explanation": "FortKnox is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-013",
+    "domain": "Discovery & Design",
+    "question": "Which Cohesity capability is the best fit when the design requirement is operational DR copies to a secondary Cohesity target for site failure scenarios?",
+    "choices": [
+      "Replication",
+      "FortKnox",
+      "CloudArchive",
+      "Data Classification"
+    ],
+    "correctAnswerIndex": 0,
+    "explanation": "Replication is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-014",
+    "domain": "Discovery & Design",
+    "question": "During solution mapping, which option should be selected for this requirement: operational DR copies to a secondary Cohesity target for site failure scenarios?",
+    "choices": [
+      "CloudArchive",
+      "Data Classification",
+      "Replication",
+      "FortKnox"
+    ],
+    "correctAnswerIndex": 2,
+    "explanation": "Replication is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-015",
+    "domain": "Discovery & Design",
+    "question": "An architect is asked to design for operational DR copies to a secondary Cohesity target for site failure scenarios. Which feature should be chosen?",
+    "choices": [
+      "Replication",
+      "FortKnox",
+      "CloudArchive",
+      "Data Classification"
+    ],
+    "correctAnswerIndex": 0,
+    "explanation": "Replication is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-016",
+    "domain": "Discovery & Design",
+    "question": "Which choice most directly addresses operational DR copies to a secondary Cohesity target for site failure scenarios without changing the requirement?",
+    "choices": [
+      "CloudArchive",
+      "Data Classification",
+      "Replication",
+      "FortKnox"
+    ],
+    "correctAnswerIndex": 2,
+    "explanation": "Replication is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-017",
+    "domain": "Third-party Integrations",
+    "question": "Which Cohesity capability is the best fit when the design requirement is cloud-hosted global management of multiple clusters?",
+    "choices": [
+      "Helios SaaS",
+      "Helios Self-Managed",
+      "DataProtect",
+      "Siren"
+    ],
+    "correctAnswerIndex": 0,
+    "explanation": "Helios SaaS is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-018",
+    "domain": "Third-party Integrations",
+    "question": "During solution mapping, which option should be selected for this requirement: cloud-hosted global management of multiple clusters?",
+    "choices": [
+      "DataProtect",
+      "Siren",
+      "Helios SaaS",
+      "Helios Self-Managed"
+    ],
+    "correctAnswerIndex": 2,
+    "explanation": "Helios SaaS is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-019",
+    "domain": "Third-party Integrations",
+    "question": "An architect is asked to design for cloud-hosted global management of multiple clusters. Which feature should be chosen?",
+    "choices": [
+      "Helios SaaS",
+      "Helios Self-Managed",
+      "DataProtect",
+      "Siren"
+    ],
+    "correctAnswerIndex": 0,
+    "explanation": "Helios SaaS is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-020",
+    "domain": "Third-party Integrations",
+    "question": "Which choice most directly addresses cloud-hosted global management of multiple clusters without changing the requirement?",
+    "choices": [
+      "DataProtect",
+      "Siren",
+      "Helios SaaS",
+      "Helios Self-Managed"
+    ],
+    "correctAnswerIndex": 2,
+    "explanation": "Helios SaaS is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-021",
+    "domain": "Third-party Integrations",
+    "question": "Which Cohesity capability is the best fit when the design requirement is self-hosted management plane for organizations requiring local management control?",
+    "choices": [
+      "Helios Self-Managed",
+      "Helios SaaS",
+      "CloudArchive",
+      "Threat Hunting / Scanning"
+    ],
+    "correctAnswerIndex": 0,
+    "explanation": "Helios Self-Managed is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-022",
+    "domain": "Third-party Integrations",
+    "question": "During solution mapping, which option should be selected for this requirement: self-hosted management plane for organizations requiring local management control?",
+    "choices": [
+      "CloudArchive",
+      "Threat Hunting / Scanning",
+      "Helios Self-Managed",
+      "Helios SaaS"
+    ],
+    "correctAnswerIndex": 2,
+    "explanation": "Helios Self-Managed is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-023",
+    "domain": "Third-party Integrations",
+    "question": "An architect is asked to design for self-hosted management plane for organizations requiring local management control. Which feature should be chosen?",
+    "choices": [
+      "Helios Self-Managed",
+      "Helios SaaS",
+      "CloudArchive",
+      "Threat Hunting / Scanning"
+    ],
+    "correctAnswerIndex": 0,
+    "explanation": "Helios Self-Managed is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-024",
+    "domain": "Third-party Integrations",
+    "question": "Which choice most directly addresses self-hosted management plane for organizations requiring local management control without changing the requirement?",
+    "choices": [
+      "CloudArchive",
+      "Threat Hunting / Scanning",
+      "Helios Self-Managed",
+      "Helios SaaS"
+    ],
+    "correctAnswerIndex": 2,
+    "explanation": "Helios Self-Managed is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-025",
+    "domain": "Architecture",
+    "question": "Which Cohesity capability is the best fit when the design requirement is file and object services (SMB/NFS/S3) delivered from the Cohesity platform?",
+    "choices": [
+      "SmartFiles",
+      "DataProtect",
+      "CloudArchive",
+      "DataLock"
+    ],
+    "correctAnswerIndex": 0,
+    "explanation": "SmartFiles is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-026",
+    "domain": "Architecture",
+    "question": "During solution mapping, which option should be selected for this requirement: file and object services (SMB/NFS/S3) delivered from the Cohesity platform?",
+    "choices": [
+      "CloudArchive",
+      "DataLock",
+      "SmartFiles",
+      "DataProtect"
+    ],
+    "correctAnswerIndex": 2,
+    "explanation": "SmartFiles is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-027",
+    "domain": "Architecture",
+    "question": "An architect is asked to design for file and object services (SMB/NFS/S3) delivered from the Cohesity platform. Which feature should be chosen?",
+    "choices": [
+      "SmartFiles",
+      "DataProtect",
+      "CloudArchive",
+      "DataLock"
+    ],
+    "correctAnswerIndex": 0,
+    "explanation": "SmartFiles is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-028",
+    "domain": "Architecture",
+    "question": "Which choice most directly addresses file and object services (SMB/NFS/S3) delivered from the Cohesity platform without changing the requirement?",
+    "choices": [
+      "CloudArchive",
+      "DataLock",
+      "SmartFiles",
+      "DataProtect"
+    ],
+    "correctAnswerIndex": 2,
+    "explanation": "SmartFiles is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-029",
+    "domain": "Architecture",
+    "question": "Which Cohesity capability is the best fit when the design requirement is policy-based workload backup and recovery orchestration?",
+    "choices": [
+      "DataProtect",
+      "SmartFiles",
+      "Organizations",
+      "CloudTier"
+    ],
+    "correctAnswerIndex": 0,
+    "explanation": "DataProtect is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-030",
+    "domain": "Architecture",
+    "question": "During solution mapping, which option should be selected for this requirement: policy-based workload backup and recovery orchestration?",
+    "choices": [
+      "Organizations",
+      "CloudTier",
+      "DataProtect",
+      "SmartFiles"
+    ],
+    "correctAnswerIndex": 2,
+    "explanation": "DataProtect is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-031",
+    "domain": "Architecture",
+    "question": "An architect is asked to design for policy-based workload backup and recovery orchestration. Which feature should be chosen?",
+    "choices": [
+      "DataProtect",
+      "SmartFiles",
+      "Organizations",
+      "CloudTier"
+    ],
+    "correctAnswerIndex": 0,
+    "explanation": "DataProtect is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-032",
+    "domain": "Architecture",
+    "question": "Which choice most directly addresses policy-based workload backup and recovery orchestration without changing the requirement?",
+    "choices": [
+      "Organizations",
+      "CloudTier",
+      "DataProtect",
+      "SmartFiles"
+    ],
+    "correctAnswerIndex": 2,
+    "explanation": "DataProtect is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-033",
+    "domain": "Security-focused Solutions",
+    "question": "Which Cohesity capability is the best fit when the design requirement is tenant isolation and delegated administration in multi-tenant designs?",
+    "choices": [
+      "Organizations",
+      "DataLock",
+      "CloudArchive",
+      "FortKnox"
+    ],
+    "correctAnswerIndex": 0,
+    "explanation": "Organizations is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-034",
+    "domain": "Security-focused Solutions",
+    "question": "During solution mapping, which option should be selected for this requirement: tenant isolation and delegated administration in multi-tenant designs?",
+    "choices": [
+      "CloudArchive",
+      "FortKnox",
+      "Organizations",
+      "DataLock"
+    ],
+    "correctAnswerIndex": 2,
+    "explanation": "Organizations is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-035",
+    "domain": "Security-focused Solutions",
+    "question": "An architect is asked to design for tenant isolation and delegated administration in multi-tenant designs. Which feature should be chosen?",
+    "choices": [
+      "Organizations",
+      "DataLock",
+      "CloudArchive",
+      "FortKnox"
+    ],
+    "correctAnswerIndex": 0,
+    "explanation": "Organizations is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-036",
+    "domain": "Security-focused Solutions",
+    "question": "Which choice most directly addresses tenant isolation and delegated administration in multi-tenant designs without changing the requirement?",
+    "choices": [
+      "CloudArchive",
+      "FortKnox",
+      "Organizations",
+      "DataLock"
+    ],
+    "correctAnswerIndex": 2,
+    "explanation": "Organizations is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-037",
+    "domain": "Security-focused Solutions",
+    "question": "Which Cohesity capability is the best fit when the design requirement is immutability controls that protect backup data from modification or deletion?",
+    "choices": [
+      "DataLock",
+      "Organizations",
+      "CloudTier",
+      "Threat Hunting / Scanning"
+    ],
+    "correctAnswerIndex": 0,
+    "explanation": "DataLock is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-038",
+    "domain": "Security-focused Solutions",
+    "question": "During solution mapping, which option should be selected for this requirement: immutability controls that protect backup data from modification or deletion?",
+    "choices": [
+      "CloudTier",
+      "Threat Hunting / Scanning",
+      "DataLock",
+      "Organizations"
+    ],
+    "correctAnswerIndex": 2,
+    "explanation": "DataLock is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-039",
+    "domain": "Security-focused Solutions",
+    "question": "An architect is asked to design for immutability controls that protect backup data from modification or deletion. Which feature should be chosen?",
+    "choices": [
+      "DataLock",
+      "Organizations",
+      "CloudTier",
+      "Threat Hunting / Scanning"
+    ],
+    "correctAnswerIndex": 0,
+    "explanation": "DataLock is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-040",
+    "domain": "Security-focused Solutions",
+    "question": "Which choice most directly addresses immutability controls that protect backup data from modification or deletion without changing the requirement?",
+    "choices": [
+      "CloudTier",
+      "Threat Hunting / Scanning",
+      "DataLock",
+      "Organizations"
+    ],
+    "correctAnswerIndex": 2,
+    "explanation": "DataLock is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-041",
+    "domain": "Security-focused Solutions",
+    "question": "Which Cohesity capability is the best fit when the design requirement is behavioral detection of unusual backup or data activity patterns?",
+    "choices": [
+      "Anomaly Detection",
+      "Threat Hunting / Scanning",
+      "Data Classification",
+      "CloudArchive"
+    ],
+    "correctAnswerIndex": 0,
+    "explanation": "Anomaly Detection is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-042",
+    "domain": "Security-focused Solutions",
+    "question": "During solution mapping, which option should be selected for this requirement: behavioral detection of unusual backup or data activity patterns?",
+    "choices": [
+      "Data Classification",
+      "CloudArchive",
+      "Anomaly Detection",
+      "Threat Hunting / Scanning"
+    ],
+    "correctAnswerIndex": 2,
+    "explanation": "Anomaly Detection is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-043",
+    "domain": "Security-focused Solutions",
+    "question": "An architect is asked to design for behavioral detection of unusual backup or data activity patterns. Which feature should be chosen?",
+    "choices": [
+      "Anomaly Detection",
+      "Threat Hunting / Scanning",
+      "Data Classification",
+      "CloudArchive"
+    ],
+    "correctAnswerIndex": 0,
+    "explanation": "Anomaly Detection is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-044",
+    "domain": "Security-focused Solutions",
+    "question": "Which choice most directly addresses behavioral detection of unusual backup or data activity patterns without changing the requirement?",
+    "choices": [
+      "Data Classification",
+      "CloudArchive",
+      "Anomaly Detection",
+      "Threat Hunting / Scanning"
+    ],
+    "correctAnswerIndex": 2,
+    "explanation": "Anomaly Detection is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-045",
+    "domain": "Security-focused Solutions",
+    "question": "Which Cohesity capability is the best fit when the design requirement is malware-oriented inspection and threat-focused investigation workflows?",
+    "choices": [
+      "Threat Hunting / Scanning",
+      "Anomaly Detection",
+      "Data Classification",
+      "Organizations"
+    ],
+    "correctAnswerIndex": 0,
+    "explanation": "Threat Hunting / Scanning is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-046",
+    "domain": "Security-focused Solutions",
+    "question": "During solution mapping, which option should be selected for this requirement: malware-oriented inspection and threat-focused investigation workflows?",
+    "choices": [
+      "Data Classification",
+      "Organizations",
+      "Threat Hunting / Scanning",
+      "Anomaly Detection"
+    ],
+    "correctAnswerIndex": 2,
+    "explanation": "Threat Hunting / Scanning is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-047",
+    "domain": "Security-focused Solutions",
+    "question": "An architect is asked to design for malware-oriented inspection and threat-focused investigation workflows. Which feature should be chosen?",
+    "choices": [
+      "Threat Hunting / Scanning",
+      "Anomaly Detection",
+      "Data Classification",
+      "Organizations"
+    ],
+    "correctAnswerIndex": 0,
+    "explanation": "Threat Hunting / Scanning is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-048",
+    "domain": "Security-focused Solutions",
+    "question": "Which choice most directly addresses malware-oriented inspection and threat-focused investigation workflows without changing the requirement?",
+    "choices": [
+      "Data Classification",
+      "Organizations",
+      "Threat Hunting / Scanning",
+      "Anomaly Detection"
+    ],
+    "correctAnswerIndex": 2,
+    "explanation": "Threat Hunting / Scanning is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-049",
+    "domain": "Security-focused Solutions",
+    "question": "Which Cohesity capability is the best fit when the design requirement is identifying and labeling sensitive data in protected datasets?",
+    "choices": [
+      "Data Classification",
+      "Anomaly Detection",
+      "Replication",
+      "CloudTier"
+    ],
+    "correctAnswerIndex": 0,
+    "explanation": "Data Classification is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-050",
+    "domain": "Security-focused Solutions",
+    "question": "During solution mapping, which option should be selected for this requirement: identifying and labeling sensitive data in protected datasets?",
+    "choices": [
+      "Replication",
+      "CloudTier",
+      "Data Classification",
+      "Anomaly Detection"
+    ],
+    "correctAnswerIndex": 2,
+    "explanation": "Data Classification is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-051",
+    "domain": "Security-focused Solutions",
+    "question": "An architect is asked to design for identifying and labeling sensitive data in protected datasets. Which feature should be chosen?",
+    "choices": [
+      "Data Classification",
+      "Anomaly Detection",
+      "Replication",
+      "CloudTier"
+    ],
+    "correctAnswerIndex": 0,
+    "explanation": "Data Classification is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-052",
+    "domain": "Security-focused Solutions",
+    "question": "Which choice most directly addresses identifying and labeling sensitive data in protected datasets without changing the requirement?",
+    "choices": [
+      "Replication",
+      "CloudTier",
+      "Data Classification",
+      "Anomaly Detection"
+    ],
+    "correctAnswerIndex": 2,
+    "explanation": "Data Classification is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-053",
+    "domain": "Discovery & Design",
+    "question": "Which Cohesity capability is the best fit when the design requirement is pre-deployment capacity and performance sizing estimation?",
+    "choices": [
+      "Web Sizing Tool",
+      "Siren health checks",
+      "Helios runtime dashboards",
+      "CloudArchive"
+    ],
+    "correctAnswerIndex": 0,
+    "explanation": "Web Sizing Tool is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-054",
+    "domain": "Discovery & Design",
+    "question": "During solution mapping, which option should be selected for this requirement: pre-deployment capacity and performance sizing estimation?",
+    "choices": [
+      "Helios runtime dashboards",
+      "CloudArchive",
+      "Web Sizing Tool",
+      "Siren health checks"
+    ],
+    "correctAnswerIndex": 2,
+    "explanation": "Web Sizing Tool is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-055",
+    "domain": "Discovery & Design",
+    "question": "An architect is asked to design for pre-deployment capacity and performance sizing estimation. Which feature should be chosen?",
+    "choices": [
+      "Web Sizing Tool",
+      "Siren health checks",
+      "Helios runtime dashboards",
+      "CloudArchive"
+    ],
+    "correctAnswerIndex": 0,
+    "explanation": "Web Sizing Tool is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-056",
+    "domain": "Discovery & Design",
+    "question": "Which choice most directly addresses pre-deployment capacity and performance sizing estimation without changing the requirement?",
+    "choices": [
+      "Helios runtime dashboards",
+      "CloudArchive",
+      "Web Sizing Tool",
+      "Siren health checks"
+    ],
+    "correctAnswerIndex": 2,
+    "explanation": "Web Sizing Tool is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-057",
+    "domain": "Gap Analysis & Troubleshooting",
+    "question": "Which Cohesity capability is the best fit when the design requirement is operational diagnostics and pre-check workflows during troubleshooting?",
+    "choices": [
+      "Siren health checks",
+      "Web Sizing Tool",
+      "CloudTier",
+      "FortKnox"
+    ],
+    "correctAnswerIndex": 0,
+    "explanation": "Siren health checks is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-058",
+    "domain": "Gap Analysis & Troubleshooting",
+    "question": "During solution mapping, which option should be selected for this requirement: operational diagnostics and pre-check workflows during troubleshooting?",
+    "choices": [
+      "CloudTier",
+      "FortKnox",
+      "Siren health checks",
+      "Web Sizing Tool"
+    ],
+    "correctAnswerIndex": 2,
+    "explanation": "Siren health checks is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-059",
+    "domain": "Gap Analysis & Troubleshooting",
+    "question": "An architect is asked to design for operational diagnostics and pre-check workflows during troubleshooting. Which feature should be chosen?",
+    "choices": [
+      "Siren health checks",
+      "Web Sizing Tool",
+      "CloudTier",
+      "FortKnox"
+    ],
+    "correctAnswerIndex": 0,
+    "explanation": "Siren health checks is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-060",
+    "domain": "Gap Analysis & Troubleshooting",
+    "question": "Which choice most directly addresses operational diagnostics and pre-check workflows during troubleshooting without changing the requirement?",
+    "choices": [
+      "CloudTier",
+      "FortKnox",
+      "Siren health checks",
+      "Web Sizing Tool"
+    ],
+    "correctAnswerIndex": 2,
+    "explanation": "Siren health checks is aligned to this use case, while the other options are adjacent Cohesity capabilities with different primary purposes.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-061",
+    "domain": "Discovery & Design",
+    "question": "You are planning protection for workloads with steep weekly growth. Which input is most important before selecting node count?",
+    "choices": [
+      "Planned data classification taxonomy labels for reporting",
+      "Whether SmartFiles will serve SMB home directories",
+      "The number of FortKnox vault regions desired",
+      "Measured front-end data change rate and retention profile"
+    ],
+    "correctAnswerIndex": 3,
+    "explanation": "Sizing decisions should be driven by workload growth and retention behavior; UI preference or unrelated features are not sizing inputs.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-062",
+    "domain": "Discovery & Design",
+    "question": "A design must satisfy strict RPO for mission-critical workloads across two sites. Which architecture element is most relevant?",
+    "choices": [
+      "Data classification taxonomy labels",
+      "SmartFiles SMB ACL inheritance",
+      "Replication policy and bandwidth-aware scheduling between sites",
+      "CloudArchive retrieval class selection"
+    ],
+    "correctAnswerIndex": 2,
+    "explanation": "RPO across sites is addressed by replication topology and scheduling, not archive retrieval settings or classification labels.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-063",
+    "domain": "Architecture",
+    "question": "What is the main reason architects discuss SpanFS when validating performance and scalability assumptions?",
+    "choices": [
+      "It is the cloud billing subsystem for archive storage",
+      "It is the distributed data platform underpinning Cohesity services",
+      "It replaces all tenant RBAC design in Organizations",
+      "It is the external SIEM parser used for alert normalization"
+    ],
+    "correctAnswerIndex": 1,
+    "explanation": "SpanFS underpins storage/data services behavior and therefore matters for performance and scalability assumptions.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-064",
+    "domain": "Third-party Integrations",
+    "question": "A customer wants SOAR automation to trigger validated recovery workflows. Which Cohesity capability should be emphasized first?",
+    "choices": [
+      "Documented Cohesity API workflows with RBAC-scoped service accounts",
+      "Replacing DataProtect with SmartFiles S3 ingest",
+      "Using CloudTier as the only cyber-recovery control",
+      "Disabling anomaly detection to reduce event volume"
+    ],
+    "correctAnswerIndex": 0,
+    "explanation": "Automation patterns should start with supported APIs and least-privilege service accounts.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-065",
+    "domain": "Security-focused Solutions",
+    "question": "Which control most directly limits blast radius from over-privileged backup operators?",
+    "choices": [
+      "CloudTier movement thresholds",
+      "Web Sizing Tool assumptions",
+      "Archive retrieval SLA tracking",
+      "RBAC role design within Organizations and scoped service accounts"
+    ],
+    "correctAnswerIndex": 3,
+    "explanation": "Least-privilege RBAC and tenant boundaries directly reduce credential blast radius.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-066",
+    "domain": "Gap Analysis & Troubleshooting",
+    "question": "During a health review, protected-job failures rise after a network change. What should be checked first?",
+    "choices": [
+      "Whether users changed SmartFiles share comments",
+      "If FortKnox used a new vault name",
+      "Connectivity/path health between protected sources and Cohesity services",
+      "CloudArchive retention lock duration"
+    ],
+    "correctAnswerIndex": 2,
+    "explanation": "A network change most directly affects data-protection connectivity and transfer paths.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-067",
+    "domain": "Third-party Integrations",
+    "question": "For cloud workload protection onboarding, which pre-check reduces deployment surprises most?",
+    "choices": [
+      "Move all backups to CloudArchive immediately",
+      "Validate account permissions, API reachability, and required service endpoints",
+      "Enable DataLock on every policy before discovery",
+      "Create FortKnox copies before initial inventory"
+    ],
+    "correctAnswerIndex": 1,
+    "explanation": "Cloud onboarding success depends on correct permissions and endpoint reachability before policy rollout.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-068",
+    "domain": "Discovery & Design",
+    "question": "When using the Cohesity platform as a backup target for third-party software, what design topic is most important?",
+    "choices": [
+      "Ingest protocol compatibility, retention behavior, and capacity planning",
+      "Helios MFA enrollment for all end users",
+      "Data classification confidence score thresholds",
+      "FortKnox token rotation interval"
+    ],
+    "correctAnswerIndex": 0,
+    "explanation": "Backup-target designs hinge on compatibility and storage planning, not unrelated security analytics settings.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-069",
+    "domain": "Architecture",
+    "question": "A customer needs both native DataProtect workflows and file/object consolidation. Which statement is correct?",
+    "choices": [
+      "SmartFiles replaces all DataProtect recovery workflows",
+      "CloudArchive is required before any DataProtect policy is created",
+      "Organizations disables file/object services by design",
+      "DataProtect and SmartFiles can be combined for different workload goals in one architecture"
+    ],
+    "correctAnswerIndex": 3,
+    "explanation": "DataProtect and SmartFiles address different use cases and can coexist in a unified architecture.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-070",
+    "domain": "Security-focused Solutions",
+    "question": "Which ransomware-readiness recommendation is strongest for an architect?",
+    "choices": [
+      "Disable tenant separation to simplify response",
+      "Use one shared admin account for faster action",
+      "Layer immutability, detection, tested recovery runbooks, and isolated copy strategy",
+      "Rely only on CloudTier to prevent encryption events"
+    ],
+    "correctAnswerIndex": 2,
+    "explanation": "Layered controls and validated recovery planning provide stronger resiliency than single-control or unsafe admin practices.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-071",
+    "domain": "Discovery & Design",
+    "question": "A customer requests lowest-cost long retention with infrequent restore needs. Which feature is usually discussed first?",
+    "choices": [
+      "Helios model refresh",
+      "CloudArchive policy design and retrieval expectations",
+      "Threat hunting scan cadence",
+      "SmartFiles protocol tuning"
+    ],
+    "correctAnswerIndex": 1,
+    "explanation": "Long-retention and rare-restore economics align to CloudArchive design, not threat scanning cadence.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-072",
+    "domain": "Discovery & Design",
+    "question": "A customer plans to onboard two large SQL estates next quarter. Which input most improves sizing confidence before approving node count?",
+    "choices": [
+      "Measured front-end data change rate and retention profile",
+      "Current SIEM connector mapping plan",
+      "Planned CloudArchive bucket naming convention",
+      "Helios tenancy display preferences"
+    ],
+    "correctAnswerIndex": 0,
+    "explanation": "Future workload onboarding decisions should be grounded in measured ingest/change and retention behavior, not administrative naming or display preferences.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-073",
+    "domain": "Discovery & Design",
+    "question": "A two-site design must maintain aggressive RPO over a constrained WAN link. Which design control is most important?",
+    "choices": [
+      "CloudArchive retrieval class planning",
+      "Replication policy cadence with bandwidth-aware scheduling",
+      "Threat-hunting scan frequency",
+      "SmartFiles SMB ACL inheritance"
+    ],
+    "correctAnswerIndex": 1,
+    "explanation": "When WAN bandwidth is constrained, replication cadence and bandwidth-aware scheduling are the key controls for meeting RPO objectives.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-074",
+    "domain": "Architecture",
+    "question": "When performing gap analysis, what is the main reason architects discuss SpanFS when validating performance and scalability assumptions?",
+    "choices": [
+      "It is the external SIEM parser used for alert normalization",
+      "It is the cloud billing subsystem for archive storage",
+      "It is the distributed data platform underpinning Cohesity services",
+      "It replaces all tenant RBAC design in Organizations"
+    ],
+    "correctAnswerIndex": 2,
+    "explanation": "SpanFS underpins storage/data services behavior and therefore matters for performance and scalability assumptions.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-075",
+    "domain": "Third-party Integrations",
+    "question": "For a hybrid-cloud proposal, a customer wants SOAR automation to trigger validated recovery workflows. Which Cohesity capability should be emphasized first?",
+    "choices": [
+      "Disabling anomaly detection to reduce event volume",
+      "Documented Cohesity API workflows with RBAC-scoped service accounts",
+      "Replacing DataProtect with SmartFiles S3 ingest",
+      "Using CloudTier as the only cyber-recovery control"
+    ],
+    "correctAnswerIndex": 1,
+    "explanation": "Automation patterns should start with supported APIs and least-privilege service accounts.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-076",
+    "domain": "Security-focused Solutions",
+    "question": "In a design workshop, which control most directly limits blast radius from over-privileged backup operators?",
+    "choices": [
+      "RBAC role design within Organizations and scoped service accounts",
+      "CloudTier movement thresholds",
+      "Web Sizing Tool assumptions",
+      "Archive retrieval SLA tracking"
+    ],
+    "correctAnswerIndex": 0,
+    "explanation": "Least-privilege RBAC and tenant boundaries directly reduce credential blast radius.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-077",
+    "domain": "Gap Analysis & Troubleshooting",
+    "question": "For a production rollout, during a health review, protected-job failures rise after a network change. What should be checked first?",
+    "choices": [
+      "CloudArchive retention lock duration",
+      "Whether users changed SmartFiles share comments",
+      "If FortKnox used a new vault name",
+      "Connectivity/path health between protected sources and Cohesity services"
+    ],
+    "correctAnswerIndex": 3,
+    "explanation": "A network change most directly affects data-protection connectivity and transfer paths.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-078",
+    "domain": "Third-party Integrations",
+    "question": "During architecture review, for cloud workload protection onboarding, which pre-check reduces deployment surprises most?",
+    "choices": [
+      "Create FortKnox copies before initial inventory",
+      "Move all backups to CloudArchive immediately",
+      "Validate account permissions, API reachability, and required service endpoints",
+      "Enable DataLock on every policy before discovery"
+    ],
+    "correctAnswerIndex": 2,
+    "explanation": "Cloud onboarding success depends on correct permissions and endpoint reachability before policy rollout.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-079",
+    "domain": "Discovery & Design",
+    "question": "When performing gap analysis, when using the Cohesity platform as a backup target for third-party software, what design topic is most important?",
+    "choices": [
+      "FortKnox token rotation interval",
+      "Ingest protocol compatibility, retention behavior, and capacity planning",
+      "Helios MFA enrollment for all end users",
+      "Data classification confidence score thresholds"
+    ],
+    "correctAnswerIndex": 1,
+    "explanation": "Backup-target designs hinge on compatibility and storage planning, not unrelated security analytics settings.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-080",
+    "domain": "Architecture",
+    "question": "For a hybrid-cloud proposal, a customer needs both native DataProtect workflows and file/object consolidation. Which statement is correct?",
+    "choices": [
+      "DataProtect and SmartFiles can be combined for different workload goals in one architecture",
+      "SmartFiles replaces all DataProtect recovery workflows",
+      "CloudArchive is required before any DataProtect policy is created",
+      "Organizations disables file/object services by design"
+    ],
+    "correctAnswerIndex": 0,
+    "explanation": "DataProtect and SmartFiles address different use cases and can coexist in a unified architecture.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-081",
+    "domain": "Security-focused Solutions",
+    "question": "In a design workshop, which ransomware-readiness recommendation is strongest for an architect?",
+    "choices": [
+      "Rely only on CloudTier to prevent encryption events",
+      "Disable tenant separation to simplify response",
+      "Use one shared admin account for faster action",
+      "Layer immutability, detection, tested recovery runbooks, and isolated copy strategy"
+    ],
+    "correctAnswerIndex": 3,
+    "explanation": "Layered controls and validated recovery planning provide stronger resiliency than single-control or unsafe admin practices.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-082",
+    "domain": "Discovery & Design",
+    "question": "For a production rollout, a customer requests lowest-cost long retention with infrequent restore needs. Which feature is usually discussed first?",
+    "choices": [
+      "SmartFiles protocol tuning",
+      "Helios model refresh",
+      "CloudArchive policy design and retrieval expectations",
+      "Threat hunting scan cadence"
+    ],
+    "correctAnswerIndex": 2,
+    "explanation": "Long-retention and rare-restore economics align to CloudArchive design, not threat scanning cadence.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-083",
+    "domain": "Discovery & Design",
+    "question": "During expansion review, capacity appears sufficient but backup windows are slipping. Which metric should drive architecture tuning first?",
+    "choices": [
+      "Average restore request age",
+      "Effective ingest throughput and concurrency during backup windows",
+      "Data classification label coverage",
+      "FortKnox vault naming hierarchy"
+    ],
+    "correctAnswerIndex": 1,
+    "explanation": "Window pressure is typically a throughput/concurrency problem, so tuning should begin with measured ingest performance under peak backup load.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-084",
+    "domain": "Discovery & Design",
+    "question": "During gap analysis for dual-site recovery, which control most directly protects planned inter-site RPO targets?",
+    "choices": [
+      "Replication policy intervals aligned to workload tiers",
+      "CloudTier cold-data thresholds",
+      "Security alert email digest cadence",
+      "SmartFiles share-comment standards"
+    ],
+    "correctAnswerIndex": 0,
+    "explanation": "Inter-site RPO is directly governed by replication intervals and workload-tier mapping, not by tiering thresholds or notification preferences.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-085",
+    "domain": "Architecture",
+    "question": "For a hybrid-cloud proposal, what is the main reason architects discuss SpanFS when validating performance and scalability assumptions?",
+    "choices": [
+      "It replaces all tenant RBAC design in Organizations",
+      "It is the external SIEM parser used for alert normalization",
+      "It is the cloud billing subsystem for archive storage",
+      "It is the distributed data platform underpinning Cohesity services"
+    ],
+    "correctAnswerIndex": 3,
+    "explanation": "SpanFS underpins storage/data services behavior and therefore matters for performance and scalability assumptions.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-086",
+    "domain": "Third-party Integrations",
+    "question": "In a design workshop, a customer wants SOAR automation to trigger validated recovery workflows. Which Cohesity capability should be emphasized first?",
+    "choices": [
+      "Using CloudTier as the only cyber-recovery control",
+      "Disabling anomaly detection to reduce event volume",
+      "Documented Cohesity API workflows with RBAC-scoped service accounts",
+      "Replacing DataProtect with SmartFiles S3 ingest"
+    ],
+    "correctAnswerIndex": 2,
+    "explanation": "Automation patterns should start with supported APIs and least-privilege service accounts.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-087",
+    "domain": "Security-focused Solutions",
+    "question": "For a production rollout, which control most directly limits blast radius from over-privileged backup operators?",
+    "choices": [
+      "Archive retrieval SLA tracking",
+      "RBAC role design within Organizations and scoped service accounts",
+      "CloudTier movement thresholds",
+      "Web Sizing Tool assumptions"
+    ],
+    "correctAnswerIndex": 1,
+    "explanation": "Least-privilege RBAC and tenant boundaries directly reduce credential blast radius.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-088",
+    "domain": "Gap Analysis & Troubleshooting",
+    "question": "During architecture review, during a health review, protected-job failures rise after a network change. What should be checked first?",
+    "choices": [
+      "Connectivity/path health between protected sources and Cohesity services",
+      "CloudArchive retention lock duration",
+      "Whether users changed SmartFiles share comments",
+      "If FortKnox used a new vault name"
+    ],
+    "correctAnswerIndex": 0,
+    "explanation": "A network change most directly affects data-protection connectivity and transfer paths.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-089",
+    "domain": "Third-party Integrations",
+    "question": "When performing gap analysis, for cloud workload protection onboarding, which pre-check reduces deployment surprises most?",
+    "choices": [
+      "Enable DataLock on every policy before discovery",
+      "Create FortKnox copies before initial inventory",
+      "Move all backups to CloudArchive immediately",
+      "Validate account permissions, API reachability, and required service endpoints"
+    ],
+    "correctAnswerIndex": 3,
+    "explanation": "Cloud onboarding success depends on correct permissions and endpoint reachability before policy rollout.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-090",
+    "domain": "Discovery & Design",
+    "question": "For a hybrid-cloud proposal, when using the Cohesity platform as a backup target for third-party software, what design topic is most important?",
+    "choices": [
+      "Data classification confidence score thresholds",
+      "FortKnox token rotation interval",
+      "Ingest protocol compatibility, retention behavior, and capacity planning",
+      "Helios MFA enrollment for all end users"
+    ],
+    "correctAnswerIndex": 2,
+    "explanation": "Backup-target designs hinge on compatibility and storage planning, not unrelated security analytics settings.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-091",
+    "domain": "Architecture",
+    "question": "In a design workshop, a customer needs both native DataProtect workflows and file/object consolidation. Which statement is correct?",
+    "choices": [
+      "Organizations disables file/object services by design",
+      "DataProtect and SmartFiles can be combined for different workload goals in one architecture",
+      "SmartFiles replaces all DataProtect recovery workflows",
+      "CloudArchive is required before any DataProtect policy is created"
+    ],
+    "correctAnswerIndex": 1,
+    "explanation": "DataProtect and SmartFiles address different use cases and can coexist in a unified architecture.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-092",
+    "domain": "Security-focused Solutions",
+    "question": "For a production rollout, which ransomware-readiness recommendation is strongest for an architect?",
+    "choices": [
+      "Layer immutability, detection, tested recovery runbooks, and isolated copy strategy",
+      "Rely only on CloudTier to prevent encryption events",
+      "Disable tenant separation to simplify response",
+      "Use one shared admin account for faster action"
+    ],
+    "correctAnswerIndex": 0,
+    "explanation": "Layered controls and validated recovery planning provide stronger resiliency than single-control or unsafe admin practices.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-093",
+    "domain": "Discovery & Design",
+    "question": "During architecture review, a customer requests lowest-cost long retention with infrequent restore needs. Which feature is usually discussed first?",
+    "choices": [
+      "Threat hunting scan cadence",
+      "SmartFiles protocol tuning",
+      "Helios model refresh",
+      "CloudArchive policy design and retrieval expectations"
+    ],
+    "correctAnswerIndex": 3,
+    "explanation": "Long-retention and rare-restore economics align to CloudArchive design, not threat scanning cadence.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-094",
+    "domain": "Discovery & Design",
+    "question": "When performing gap analysis, you are planning protection for workloads with steep weekly growth. Which input is most important before selecting node count?",
+    "choices": [
+      "Whether SmartFiles will serve SMB home directories",
+      "The number of FortKnox vault regions desired",
+      "Measured front-end data change rate and retention profile",
+      "Planned data classification taxonomy labels for reporting"
+    ],
+    "correctAnswerIndex": 2,
+    "explanation": "Sizing decisions should be driven by workload growth and retention behavior; UI preference or unrelated features are not sizing inputs.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-095",
+    "domain": "Discovery & Design",
+    "question": "For a hybrid-cloud architecture with mixed RPO tiers, what should be prioritized to keep site-failover objectives realistic?",
+    "choices": [
+      "Threat-hunting rule naming consistency",
+      "Replication topology and policy segmentation by workload criticality",
+      "CloudArchive legal-hold defaults",
+      "Tenant branding conventions"
+    ],
+    "correctAnswerIndex": 1,
+    "explanation": "Mixed RPO tiers require explicit replication topology and policy segmentation by workload criticality to keep failover objectives achievable.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-096",
+    "domain": "Architecture",
+    "question": "In a design workshop, what is the main reason architects discuss SpanFS when validating performance and scalability assumptions?",
+    "choices": [
+      "It is the distributed data platform underpinning Cohesity services",
+      "It replaces all tenant RBAC design in Organizations",
+      "It is the external SIEM parser used for alert normalization",
+      "It is the cloud billing subsystem for archive storage"
+    ],
+    "correctAnswerIndex": 0,
+    "explanation": "SpanFS underpins storage/data services behavior and therefore matters for performance and scalability assumptions.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-097",
+    "domain": "Third-party Integrations",
+    "question": "For a production rollout, a customer wants SOAR automation to trigger validated recovery workflows. Which Cohesity capability should be emphasized first?",
+    "choices": [
+      "Replacing DataProtect with SmartFiles S3 ingest",
+      "Using CloudTier as the only cyber-recovery control",
+      "Disabling anomaly detection to reduce event volume",
+      "Documented Cohesity API workflows with RBAC-scoped service accounts"
+    ],
+    "correctAnswerIndex": 3,
+    "explanation": "Automation patterns should start with supported APIs and least-privilege service accounts.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-098",
+    "domain": "Security-focused Solutions",
+    "question": "During architecture review, which control most directly limits blast radius from over-privileged backup operators?",
+    "choices": [
+      "Web Sizing Tool assumptions",
+      "Archive retrieval SLA tracking",
+      "RBAC role design within Organizations and scoped service accounts",
+      "CloudTier movement thresholds"
+    ],
+    "correctAnswerIndex": 2,
+    "explanation": "Least-privilege RBAC and tenant boundaries directly reduce credential blast radius.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-099",
+    "domain": "Gap Analysis & Troubleshooting",
+    "question": "When performing gap analysis, during a health review, protected-job failures rise after a network change. What should be checked first?",
+    "choices": [
+      "If FortKnox used a new vault name",
+      "Connectivity/path health between protected sources and Cohesity services",
+      "CloudArchive retention lock duration",
+      "Whether users changed SmartFiles share comments"
+    ],
+    "correctAnswerIndex": 1,
+    "explanation": "A network change most directly affects data-protection connectivity and transfer paths.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-100",
+    "domain": "Third-party Integrations",
+    "question": "For a hybrid-cloud proposal, for cloud workload protection onboarding, which pre-check reduces deployment surprises most?",
+    "choices": [
+      "Validate account permissions, API reachability, and required service endpoints",
+      "Enable DataLock on every policy before discovery",
+      "Create FortKnox copies before initial inventory",
+      "Move all backups to CloudArchive immediately"
+    ],
+    "correctAnswerIndex": 0,
+    "explanation": "Cloud onboarding success depends on correct permissions and endpoint reachability before policy rollout.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-101",
+    "domain": "Discovery & Design",
+    "question": "In a design workshop, when using the Cohesity platform as a backup target for third-party software, what design topic is most important?",
+    "choices": [
+      "Helios MFA enrollment for all end users",
+      "Data classification confidence score thresholds",
+      "FortKnox token rotation interval",
+      "Ingest protocol compatibility, retention behavior, and capacity planning"
+    ],
+    "correctAnswerIndex": 3,
+    "explanation": "Backup-target designs hinge on compatibility and storage planning, not unrelated security analytics settings.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-102",
+    "domain": "Architecture",
+    "question": "For a production rollout, a customer needs both native DataProtect workflows and file/object consolidation. Which statement is correct?",
+    "choices": [
+      "CloudArchive is required before any DataProtect policy is created",
+      "Organizations disables file/object services by design",
+      "DataProtect and SmartFiles can be combined for different workload goals in one architecture",
+      "SmartFiles replaces all DataProtect recovery workflows"
+    ],
+    "correctAnswerIndex": 2,
+    "explanation": "DataProtect and SmartFiles address different use cases and can coexist in a unified architecture.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-103",
+    "domain": "Security-focused Solutions",
+    "question": "During architecture review, which ransomware-readiness recommendation is strongest for an architect?",
+    "choices": [
+      "Use one shared admin account for faster action",
+      "Layer immutability, detection, tested recovery runbooks, and isolated copy strategy",
+      "Rely only on CloudTier to prevent encryption events",
+      "Disable tenant separation to simplify response"
+    ],
+    "correctAnswerIndex": 1,
+    "explanation": "Layered controls and validated recovery planning provide stronger resiliency than single-control or unsafe admin practices.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-104",
+    "domain": "Discovery & Design",
+    "question": "When performing gap analysis, a customer requests lowest-cost long retention with infrequent restore needs. Which feature is usually discussed first?",
+    "choices": [
+      "CloudArchive policy design and retrieval expectations",
+      "Threat hunting scan cadence",
+      "SmartFiles protocol tuning",
+      "Helios model refresh"
+    ],
+    "correctAnswerIndex": 0,
+    "explanation": "Long-retention and rare-restore economics align to CloudArchive design, not threat scanning cadence.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-105",
+    "domain": "Discovery & Design",
+    "question": "For a hybrid-cloud proposal, what is the strongest planning input before committing to on-prem node count?",
+    "choices": [
+      "Helios model catalog refresh cadence",
+      "Measured daily ingest plus local-retention objectives before cloud offload assumptions",
+      "Preferred SOC dashboard grouping",
+      "Data classification report export format"
+    ],
+    "correctAnswerIndex": 1,
+    "explanation": "On-prem node sizing should start from measured ingest and local-retention requirements, then layer in cloud offload assumptions.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-106",
+    "domain": "Gap Analysis & Troubleshooting",
+    "question": "A Siren pre-check reports multiple degraded components before a change window. What is the best architect action?",
+    "choices": [
+      "Re-image all nodes immediately",
+      "Convert all policies to CloudArchive first",
+      "Pause the change and resolve health issues before proceeding",
+      "Ignore Siren results if backups completed yesterday"
+    ],
+    "correctAnswerIndex": 2,
+    "explanation": "Pre-check failures are an early warning; remediation should occur before planned change activity.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-107",
+    "domain": "Gap Analysis & Troubleshooting",
+    "question": "Which output from service-health style CLI or UI checks is most useful during first-pass triage?",
+    "choices": [
+      "Current CloudArchive retrieval-class and legal-hold settings",
+      "Current service states showing which components are healthy, degraded, or down",
+      "A list of archived objects older than one year",
+      "The tenant branding configuration"
+    ],
+    "correctAnswerIndex": 1,
+    "explanation": "Initial triage depends on fast visibility into component state, not unrelated inventory data.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-108",
+    "domain": "Gap Analysis & Troubleshooting",
+    "question": "When troubleshooting intermittent protection failures, which signal is most architect-relevant?",
+    "choices": [
+      "Correlation between failure timestamps and network/latency anomalies",
+      "The number of SmartFiles folders renamed this week",
+      "CloudArchive retrieval tier color coding",
+      "Replication target naming convention"
+    ],
+    "correctAnswerIndex": 0,
+    "explanation": "Time-correlated infrastructure signals help isolate root cause for intermittent failures.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-109",
+    "domain": "Architecture",
+    "question": "Why is SpanFS behavior architecturally important during expansion planning?",
+    "choices": [
+      "It automatically provisions external SIEM connectors",
+      "It replaces Organizations RBAC design",
+      "It determines FortKnox legal retention policy",
+      "It influences how data services consume capacity and performance across the cluster"
+    ],
+    "correctAnswerIndex": 3,
+    "explanation": "SpanFS underpins data placement and service behavior, so expansion planning must account for it.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-110",
+    "domain": "Gap Analysis & Troubleshooting",
+    "question": "A health workflow shows sustained storage-usage acceleration versus forecast. What should happen next?",
+    "choices": [
+      "Delete all old audit logs regardless of policy",
+      "Move every snapshot directly to FortKnox",
+      "Revisit sizing assumptions and growth-rate inputs before adding workloads",
+      "Disable anomaly detection permanently"
+    ],
+    "correctAnswerIndex": 2,
+    "explanation": "Growth acceleration is a capacity-planning signal that should trigger forecast and design reassessment.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-111",
+    "domain": "Gap Analysis & Troubleshooting",
+    "question": "What is the safest first response when a named platform service appears unhealthy in CLI output?",
+    "choices": [
+      "Immediately remove the node from cluster metadata",
+      "Validate impact scope, collect diagnostics, and follow documented recovery runbooks",
+      "Force-restart every service on every node",
+      "Ignore unless all services fail"
+    ],
+    "correctAnswerIndex": 1,
+    "explanation": "Controlled diagnostics and runbook-driven actions reduce risk versus blanket restarts.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-112",
+    "domain": "Gap Analysis & Troubleshooting",
+    "question": "A health report shows recurring job retries with acceptable throughput but high latency spikes. What is the likely focus area?",
+    "choices": [
+      "Network path quality and transient congestion during backup windows",
+      "Data classification labels",
+      "FortKnox vault naming standards",
+      "Organizations role label naming convention"
+    ],
+    "correctAnswerIndex": 0,
+    "explanation": "Latency spikes with retries usually point to network-path instability or congestion.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-113",
+    "domain": "Gap Analysis & Troubleshooting",
+    "question": "Which implementation-level check is useful before declaring a backup platform issue?",
+    "choices": [
+      "Validate CloudArchive retrieval legal hold labels",
+      "Review SmartFiles share descriptions",
+      "Count Organizations tenants",
+      "Confirm source workload consistency state and connectivity prerequisites"
+    ],
+    "correctAnswerIndex": 3,
+    "explanation": "Source-side consistency and connectivity prerequisites can mimic platform issues if skipped.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-114",
+    "domain": "Gap Analysis & Troubleshooting",
+    "question": "Why do architects care about service/component health summaries even if they are not daily operators?",
+    "choices": [
+      "They eliminate the need for replication",
+      "They guarantee immutable retention by default",
+      "They indicate systemic risk that can invalidate RPO/RTO assumptions",
+      "They replace formal recovery testing"
+    ],
+    "correctAnswerIndex": 2,
+    "explanation": "Architectural commitments depend on stable platform operations and validated service health.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-115",
+    "domain": "Gap Analysis & Troubleshooting",
+    "question": "A supportability review asks for command-level rigor without unsupported tinkering. What is the right guidance?",
+    "choices": [
+      "Bypass RBAC to simplify troubleshooting",
+      "Use documented CLI/UI health checks and escalate with support bundles when needed",
+      "Run undocumented shell changes to speed remediation",
+      "Disable logging to reduce noise"
+    ],
+    "correctAnswerIndex": 1,
+    "explanation": "Use supported diagnostics and escalation paths; avoid unsupported command modifications.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-116",
+    "domain": "Security-focused Solutions",
+    "question": "You are hardening a multi-tenant Cohesity design. Which controls directly reduce unauthorized destructive changes? (Select two.)",
+    "choices": [
+      "DataLock/immutability configuration for protected copies",
+      "Increasing CloudTier thresholds",
+      "Renaming SmartFiles shares",
+      "Least-privilege RBAC with scoped administrative roles"
+    ],
+    "correctAnswerIndexes": [
+      0,
+      3
+    ],
+    "selectCount": 2,
+    "explanation": "RBAC limits who can act and immutability limits what can be altered; threshold or naming changes do not provide equivalent protection.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-117",
+    "domain": "Discovery & Design",
+    "question": "For initial architecture sizing quality, which inputs are mandatory before final node recommendations? (Select two.)",
+    "choices": [
+      "Preferred SIEM alert dashboard grouping",
+      "FortKnox legal entity naming",
+      "Front-end capacity and projected growth/change rate",
+      "Retention and backup frequency objectives"
+    ],
+    "correctAnswerIndexes": [
+      2,
+      3
+    ],
+    "selectCount": 2,
+    "explanation": "Sizing quality depends on data volume/change and policy behavior.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-118",
+    "domain": "Security-focused Solutions",
+    "question": "Which statements correctly differentiate FortKnox cyber vaulting from standard replication? (Select two.)",
+    "choices": [
+      "Replication requires disabling RBAC to function",
+      "FortKnox emphasizes isolated vaulting controls for cyber recovery",
+      "Replication focuses on secondary copy workflows for DR continuity",
+      "Both are identical features with identical threat model"
+    ],
+    "correctAnswerIndexes": [
+      1,
+      2
+    ],
+    "selectCount": 2,
+    "explanation": "These two capabilities both create copies but for different operational and security design goals.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-119",
+    "domain": "Architecture",
+    "question": "When discussing CloudArchive and CloudTier, which are correct? (Select two.)",
+    "choices": [
+      "CloudArchive is typically mapped to long-term retention copies",
+      "CloudTier is commonly used to extend effective capacity with colder data",
+      "CloudTier is a replacement for Organizations tenant isolation",
+      "CloudArchive is used to provide SMB user shares"
+    ],
+    "correctAnswerIndexes": [
+      0,
+      1
+    ],
+    "selectCount": 2,
+    "explanation": "Archive and tiering solve different cloud-data-placement goals.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-120",
+    "domain": "Third-party Integrations",
+    "question": "A security-operations integration plan is being reviewed. Which practices are recommended? (Select two.)",
+    "choices": [
+      "Map alert semantics so external tools preserve triage meaning",
+      "Share one global admin token across all tools",
+      "Disable auditing to reduce event volume",
+      "Use documented APIs/integrations with scoped credentials"
+    ],
+    "correctAnswerIndexes": [
+      0,
+      3
+    ],
+    "selectCount": 2,
+    "explanation": "Supported integrations and scoped credentials are foundational; broad tokens and disabled auditing increase risk.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-121",
+    "domain": "Gap Analysis & Troubleshooting",
+    "question": "During recurring backup-window instability, which checks are most useful first? (Select two.)",
+    "choices": [
+      "Rename protection policies for clarity",
+      "Change all archive retention to one year",
+      "Correlate failures with network latency/packet-loss indicators",
+      "Review cluster service-health summaries for degraded components"
+    ],
+    "correctAnswerIndexes": [
+      2,
+      3
+    ],
+    "selectCount": 2,
+    "explanation": "First-pass triage should focus on correlated infrastructure and service health signals.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-122",
+    "domain": "Architecture",
+    "question": "Which statements about SmartFiles versus DataProtect are accurate? (Select two.)",
+    "choices": [
+      "SmartFiles is required for FortKnox vault access",
+      "SmartFiles provides file/object services such as SMB/NFS/S3",
+      "DataProtect orchestrates policy-based backup and recovery workflows",
+      "DataProtect is only used for tenant branding"
+    ],
+    "correctAnswerIndexes": [
+      1,
+      2
+    ],
+    "selectCount": 2,
+    "explanation": "SmartFiles and DataProtect serve different core functions and are often complementary.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-123",
+    "domain": "Third-party Integrations",
+    "question": "For Helios deployment model selection, which are valid design considerations? (Select two.)",
+    "choices": [
+      "Regulatory or policy requirements for management-plane hosting",
+      "Operational preference for SaaS versus self-managed control",
+      "Whether the SOC prefers daily or hourly email digest cadence",
+      "Standardized alert taxonomy across SIEM connectors"
+    ],
+    "correctAnswerIndexes": [
+      0,
+      1
+    ],
+    "selectCount": 2,
+    "explanation": "Hosting/regulatory requirements and operating model preference are relevant; UI cosmetic preferences are not.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-124",
+    "domain": "Discovery & Design",
+    "question": "A customer wants Cohesity as a backup target for third-party products. Which planning points matter most? (Select two.)",
+    "choices": [
+      "Retention/capacity behavior under expected ingest patterns",
+      "Tenant naming convention for chargeback reporting",
+      "Helios model catalog refresh cadence",
+      "Protocol/workflow compatibility and ingest design"
+    ],
+    "correctAnswerIndexes": [
+      0,
+      3
+    ],
+    "selectCount": 2,
+    "explanation": "Backup-target designs depend on ingest compatibility and storage behavior under load.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-125",
+    "domain": "Security-focused Solutions",
+    "question": "Which controls are part of layered ransomware resiliency in Cohesity architectures? (Select three.)",
+    "choices": [
+      "Immutability/DataLock controls",
+      "Detection capabilities such as anomaly/threat monitoring",
+      "Isolated copy strategy such as FortKnox where required",
+      "Disabling all external integrations",
+      "Skipping recovery testing to reduce operational overhead"
+    ],
+    "correctAnswerIndexes": [
+      0,
+      1,
+      2
+    ],
+    "selectCount": 3,
+    "explanation": "Layered resiliency combines prevention, detection, and isolated recovery patterns; disabling integrations and skipping testing are counterproductive.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-126",
+    "domain": "Gap Analysis & Troubleshooting",
+    "question": "For architect-level troubleshooting hygiene, which practices are valid? (Select three.)",
+    "choices": [
+      "Trend capacity/performance signals against the sizing baseline",
+      "Use support bundles and official runbooks for deep escalation",
+      "Apply undocumented shell edits directly in production",
+      "Ignore intermittent alerts until a full outage occurs",
+      "Run documented health/pre-check workflows before major changes"
+    ],
+    "correctAnswerIndexes": [
+      0,
+      1,
+      4
+    ],
+    "selectCount": 3,
+    "explanation": "Supported health checks, trend review, and formal escalation improve reliability and reduce risk.",
+    "citationTopic": "Cohesity certification overview / study topic"
+  },
+  {
+    "id": "ext-127",
+    "domain": "Security-focused Solutions",
+    "question": "When implementing tenant separation, which statements are accurate? (Select two.)",
+    "choices": [
+      "Organizations and RBAC enforce administrative boundaries",
+      "DataLock complements but does not replace role design",
+      "CloudTier is the primary tenant authorization mechanism",
+      "Web Sizing Tool configures user permissions"
+    ],
+    "correctAnswerIndexes": [
+      0,
+      1
+    ],
+    "selectCount": 2,
+    "explanation": "Tenant boundaries require identity/role controls, while immutability is complementary data protection.",
     "citationTopic": "Cohesity certification overview / study topic"
   }
 ];
