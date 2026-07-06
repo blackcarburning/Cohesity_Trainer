@@ -25,7 +25,7 @@ Open `index.html` in a browser to use the Cohesity Certified Architect Expert pr
 - The app validates each returned question individually, skips invalid entries, and reports returned/valid/skipped/displayed counts in status text.
 - The AI prompt explicitly targets Cohesity product-level technical detail, architectural decision-making, supported workflow differences, troubleshooting/gap-analysis reasoning, and scenario-based design questions.
 - The AI prompt also requires plausible Cohesity-adjacent distractors that are wrong for a clear reason (scope, workflow stage, deployment model, feature purpose, or design implication), rather than silly or unrelated answers.
-- Generated questions with obviously silly distractor terms (for example `cafeteria`, `rack screw`, `coffee`, or `printer toner`) are rejected during validation without breaking partial-generation fallback behavior.
+- Generated questions with obviously silly distractor terms (for example `cafeteria`, `rack screw`, `coffee`, or `printer toner`) are rejected during validation while maintaining partial-generation fallback behavior.
 - When at least 50 valid AI questions are available, the app loads the first 50 valid AI questions as the current exam.
 - When fewer than 50 valid AI questions are available:
   - If a current exam exists, the app replaces the first `N` current questions with the `N` valid AI questions and keeps the rest.
