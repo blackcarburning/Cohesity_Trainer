@@ -241,13 +241,17 @@
           <button id="generateButton" type="button">Generate 50 built-in questions</button>
           <button id="submitButton" type="button" class="secondary" disabled>Submit exam</button>
           <button id="toggleAnswersButton" type="button" class="ghost" disabled>Show all answers</button>
+          <button id="clearRevealButton" type="button" class="ghost" disabled>Clear answer reveals</button>
+        </div>
+        <div class="button-row" style="margin-top:4px;">
+          <button id="exportConfigButton" type="button" class="ghost">Export configuration</button>
         </div>
         <p class="help" id="examStatus" aria-live="polite">No exam generated yet.</p>
       </section>
 
       <section class="panel" aria-labelledby="openai-heading">
         <h2 id="openai-heading">Append 50 more with OpenAI</h2>
-        <p class="help">Use your own API key in this browser session to request 50 additional multiple-choice questions in the same schema. The key is never stored by this page.</p>
+        <p class="help">Use your own API key to request 50 additional questions client-side. Your API key and selected model are saved in browser local storage for convenience.</p>
         <div class="controls-row">
           <div>
             <label for="openaiKey">OpenAI API key</label>
@@ -269,14 +273,30 @@
         </div>
         <div class="button-row">
           <button id="refreshModelsButton" type="button" class="ghost">Refresh available models from API key</button>
+          <button id="forgetApiKeyButton" type="button" class="ghost">Forget saved API key</button>
         </div>
         <p id="modelStatus" class="help" aria-live="polite"></p>
         <div class="button-row">
           <button id="appendOpenAIButton" type="button" class="secondary">Generate 50 more with OpenAI</button>
         </div>
-        <div class="warning">Browser-side API calls expose the key to this page context. Avoid using a personal or organization key on a shared/public machine.</div>
+        <div class="warning">⚠️ <strong>Security notice:</strong> Your API key is stored in browser local storage. This is convenient but less secure on shared or public machines. Use <strong>Forget saved API key</strong> to remove it when done. Browser-side API calls also expose the key to this page context.</div>
       </section>
     </div>
+
+    <section id="historyPanel" class="panel" aria-labelledby="history-heading" style="margin-top:16px;" hidden>
+      <h2 id="history-heading">Saved exam history</h2>
+      <p class="help">Select a previously generated set to reload it. History is saved in browser local storage (most recent 25 sets kept). Loading a saved set resets all current answer selections.</p>
+      <div class="controls-row">
+        <div style="flex:1;min-width:0;">
+          <label for="historySelect">Saved sets (most recent first)</label>
+          <select id="historySelect" style="max-width:none;width:100%;"></select>
+        </div>
+      </div>
+      <div class="button-row">
+        <button id="loadHistoryButton" type="button" class="secondary">Load selected set</button>
+        <button id="clearHistoryButton" type="button" class="ghost">Clear all history</button>
+      </div>
+    </section>
 
     <section id="summary" class="summary" aria-live="polite"></section>
 
@@ -1190,7 +1210,8 @@ window.COHESITY_QUESTION_BANK =
       "DataProtect for policy-driven protected copies and recoveries",
       "CloudArchive for off-site copy placement in object storage",
       "FortKnox for isolated cyber-vault resiliency",
-      "SmartFiles front-end namespace tuning as the sole ransomware control"
+      "SmartFiles front-end namespace tuning as the sole ransomware control",
+      "Helios SaaS as the only required on-premises management interface"
     ],
     "correctAnswerIndexes": [0, 1, 2],
     "selectCount": 3,
@@ -1306,7 +1327,8 @@ window.COHESITY_QUESTION_BANK =
       "Create/archive policy schedules that run approximately monthly with seven-year retention.",
       "Configure and register an external archival target in the chosen cloud object store.",
       "Bind the relevant protected data to the archive-enabled protection policy.",
-      "Rely only on cloud-console lifecycle rules and skip cluster-side archive configuration."
+      "Rely only on cloud-console lifecycle rules and skip cluster-side archive configuration.",
+      "Use DataLock compliance mode as the sole replacement for policy-scheduled archiving."
     ],
     "correctAnswerIndexes": [0, 1, 2],
     "selectCount": 3,
@@ -1336,7 +1358,8 @@ window.COHESITY_QUESTION_BANK =
       "Federated SAML authentication with enterprise identity provider",
       "AD group-based RBAC role assignment with least privilege",
       "MFA enforcement for privileged administrative access",
-      "Shared local admin accounts to simplify emergency operations"
+      "Shared local admin accounts to simplify emergency operations",
+      "Disabling all API access to reduce the management attack surface"
     ],
     "correctAnswerIndexes": [0, 1, 2],
     "selectCount": 3,
@@ -1453,8 +1476,11 @@ window.COHESITY_QUESTION_BANK =
     const generateButton = document.getElementById('generateButton');
     const submitButton = document.getElementById('submitButton');
     const toggleAnswersButton = document.getElementById('toggleAnswersButton');
+    const clearRevealButton = document.getElementById('clearRevealButton');
+    const exportConfigButton = document.getElementById('exportConfigButton');
     const appendOpenAIButton = document.getElementById('appendOpenAIButton');
     const refreshModelsButton = document.getElementById('refreshModelsButton');
+    const forgetApiKeyButton = document.getElementById('forgetApiKeyButton');
     const openaiKeyInput = document.getElementById('openaiKey');
     const openaiModelInput = document.getElementById('openaiModel');
     const modelStatus = document.getElementById('modelStatus');
@@ -1462,6 +1488,160 @@ window.COHESITY_QUESTION_BANK =
     const summary = document.getElementById('summary');
     const examStatus = document.getElementById('examStatus');
     const timerPill = document.getElementById('timerPill');
+    const historyPanel = document.getElementById('historyPanel');
+    const historySelect = document.getElementById('historySelect');
+    const loadHistoryButton = document.getElementById('loadHistoryButton');
+    const clearHistoryButton = document.getElementById('clearHistoryButton');
+
+    // ── localStorage helpers ─────────────────────────────────────────────────
+    const LS_API_KEY   = 'cohesityExamApiKey';
+    const LS_MODEL     = 'cohesityExamModel';
+    const LS_HISTORY   = 'cohesityExamHistory';
+    const MAX_HISTORY  = 25;
+    const APP_VERSION  = 1;
+
+    function lsGet(key, fallback = null) {
+      try {
+        const v = localStorage.getItem(key);
+        return v !== null ? JSON.parse(v) : fallback;
+      } catch (e) {
+        console.warn('localStorage read/parse failed for key', key, e);
+        return fallback;
+      }
+    }
+
+    function lsSet(key, value) {
+      try { localStorage.setItem(key, JSON.stringify(value)); return true; }
+      catch (e) { console.warn('localStorage write failed:', e); return false; }
+    }
+
+    function lsRemove(key) {
+      try { localStorage.removeItem(key); } catch { /* ignore */ }
+    }
+
+    // ── API key / model persistence ──────────────────────────────────────────
+    function saveApiKeyAndModel() {
+      const key = openaiKeyInput.value.trim();
+      if (key) lsSet(LS_API_KEY, key); else lsRemove(LS_API_KEY);
+      lsSet(LS_MODEL, openaiModelInput.value);
+    }
+
+    function forgetApiKey() {
+      lsRemove(LS_API_KEY);
+      openaiKeyInput.value = '';
+      modelStatus.textContent = 'API key removed from local storage.';
+    }
+
+    function restoreApiKeyAndModel() {
+      const savedKey = lsGet(LS_API_KEY, '');
+      if (savedKey) openaiKeyInput.value = savedKey;
+      const savedModel = lsGet(LS_MODEL, '');
+      if (savedModel) {
+        const opt = Array.from(openaiModelInput.options).find(o => o.value === savedModel);
+        if (opt) openaiModelInput.value = savedModel;
+      }
+    }
+
+    // ── Exam history ─────────────────────────────────────────────────────────
+    function loadHistory() {
+      return lsGet(LS_HISTORY, []);
+    }
+
+    function saveToHistory(questions, source, domains, model) {
+      const history = loadHistory();
+      const entry = {
+        id: `hist-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+        generatedAt: new Date().toISOString(),
+        source,
+        domains: domains || [],
+        model: model || null,
+        questions
+      };
+      history.unshift(entry);
+      if (history.length > MAX_HISTORY) history.splice(MAX_HISTORY);
+      if (!lsSet(LS_HISTORY, history)) {
+        examStatus.textContent += ' (History could not be saved — storage may be full or unavailable.)';
+      }
+      return entry;
+    }
+
+    function renderHistoryDropdown() {
+      const history = loadHistory();
+      historySelect.innerHTML = '';
+      if (!history.length) {
+        historyPanel.hidden = true;
+        return;
+      }
+      const placeholder = document.createElement('option');
+      placeholder.value = '';
+      placeholder.textContent = '— Select a saved set —';
+      historySelect.appendChild(placeholder);
+      history.forEach(entry => {
+        const dateStr = entry.generatedAt.slice(0, 16).replace('T', ' ');
+        const modelPart = entry.model ? ` — ${entry.model}` : '';
+        const label = `${dateStr} — ${entry.source}${modelPart} — ${entry.questions.length} questions`;
+        const opt = document.createElement('option');
+        opt.value = entry.id;
+        opt.textContent = label;
+        historySelect.appendChild(opt);
+      });
+      historyPanel.hidden = false;
+    }
+
+    function loadHistorySet() {
+      const id = historySelect.value;
+      if (!id) { examStatus.textContent = 'Select a saved set from the dropdown first.'; return; }
+      const history = loadHistory();
+      const entry = history.find(e => e.id === id);
+      if (!entry || !Array.isArray(entry.questions) || !entry.questions.length) {
+        examStatus.textContent = 'Could not load the selected set — data may be corrupt.';
+        return;
+      }
+      const questions = entry.questions.map((q, i) => ({
+        ...q,
+        instanceId: `${q.id ?? 'q'}-loaded-${i + 1}-${Math.random().toString(36).slice(2, 8)}`
+      }));
+      resetExam(questions);
+      const dt = new Date(entry.generatedAt).toLocaleString();
+      examStatus.textContent = `Loaded saved set from ${dt} (${questions.length} questions).`;
+    }
+
+    function clearAllHistory() {
+      if (!confirm('Clear all saved exam history from local storage? This cannot be undone.')) return;
+      lsRemove(LS_HISTORY);
+      renderHistoryDropdown();
+      examStatus.textContent = 'Exam history cleared.';
+    }
+
+    // ── Export configuration ─────────────────────────────────────────────────
+    function exportConfig() {
+      const history = loadHistory();
+      const config = {
+        schemaVersion: APP_VERSION,
+        exportedAt: new Date().toISOString(),
+        selectedModel: openaiModelInput.value,
+        selectedDomains: getSelectedDomains(),
+        timerMinutes: timerMinutesInput.value ? Number(timerMinutesInput.value) : null,
+        historyMetadata: history.map(e => ({
+          id: e.id,
+          generatedAt: e.generatedAt,
+          source: e.source,
+          domains: e.domains,
+          model: e.model,
+          questionCount: e.questions ? e.questions.length : 0
+        })),
+        note: 'API key is intentionally excluded from this export. This file is for reference and manual preference restoration only — there is no import feature.'
+      };
+      const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `cohesity-exam-config-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
 
     function createDomainControls() {
       domainFilters.innerHTML = '';
@@ -1560,6 +1740,7 @@ window.COHESITY_QUESTION_BANK =
       submitButton.disabled = !hasQuestions || state.submitted;
       toggleAnswersButton.disabled = !hasQuestions;
       toggleAnswersButton.textContent = state.showAllAnswers ? 'Hide all answers' : 'Show all answers';
+      clearRevealButton.disabled = !hasQuestions;
     }
 
     function setSummary(message, expired = false) {
@@ -1603,7 +1784,8 @@ window.COHESITY_QUESTION_BANK =
         const note = document.createElement('p');
         note.className = 'inline-note';
         const selectCount = getQuestionSelectCount(question);
-        const instruction = selectCount === 1 ? 'Select one answer.' : `Select ${selectCount} answers.`;
+        const totalChoices = question.choices.length;
+        const instruction = selectCount === 1 ? 'Select one answer.' : `Select all that apply (${selectCount} of ${totalChoices}).`;
         note.textContent = state.submitted ? 'Submitted result shown below.' : `${instruction} Use Reveal answer if you want to self-check before submitting.`;
         titleWrap.append(title, note);
 
@@ -1757,6 +1939,8 @@ window.COHESITY_QUESTION_BANK =
       }
       const questions = sampleQuestions(pool, 50);
       resetExam(questions);
+      saveToHistory(questions, 'Built-in', selectedDomains, null);
+      renderHistoryDropdown();
     }
 
     function extractJsonString(content) {
@@ -1771,15 +1955,16 @@ window.COHESITY_QUESTION_BANK =
       const prefix = `Generated question ${index + 1}`;
       if (!question || typeof question !== 'object') throw new Error(`${prefix} is not an object.`);
       if (typeof question.question !== 'string' || !question.question.trim()) throw new Error(`${prefix} is missing question text.`);
-      if (!Array.isArray(question.choices) || question.choices.length !== 4 || question.choices.some((choice) => typeof choice !== 'string' || !choice.trim())) {
-        throw new Error(`${prefix} must include exactly 4 non-empty choices.`);
+      const numChoices = Array.isArray(question.choices) ? question.choices.length : 0;
+      if (numChoices < 4 || numChoices > 5 || question.choices.some((choice) => typeof choice !== 'string' || !choice.trim())) {
+        throw new Error(`${prefix} must include 4 or 5 non-empty choices.`);
       }
       const hasSingle = Number.isInteger(question.correctAnswerIndex);
       const hasMulti = Array.isArray(question.correctAnswerIndexes);
       if (!hasSingle && !hasMulti) {
         throw new Error(`${prefix} must include correctAnswerIndex or correctAnswerIndexes.`);
       }
-      if (hasSingle && (question.correctAnswerIndex < 0 || question.correctAnswerIndex > 3)) {
+      if (hasSingle && (question.correctAnswerIndex < 0 || question.correctAnswerIndex >= numChoices)) {
         throw new Error(`${prefix} has an out-of-range correctAnswerIndex.`);
       }
       if (hasMulti) {
@@ -1790,14 +1975,20 @@ window.COHESITY_QUESTION_BANK =
         if (uniqueIndexes.length !== question.correctAnswerIndexes.length) {
           throw new Error(`${prefix} correctAnswerIndexes must be unique.`);
         }
-        if (uniqueIndexes.some((value) => !Number.isInteger(value) || value < 0 || value > 3)) {
+        if (uniqueIndexes.some((value) => !Number.isInteger(value) || value < 0 || value >= numChoices)) {
           throw new Error(`${prefix} has out-of-range values in correctAnswerIndexes.`);
         }
         if (uniqueIndexes.length < 2) {
           throw new Error(`${prefix} correctAnswerIndexes must include at least two answers.`);
         }
-        if (uniqueIndexes.length >= question.choices.length) {
+        if (uniqueIndexes.length >= numChoices) {
           throw new Error(`${prefix} correctAnswerIndexes must be fewer than all choices.`);
+        }
+        // Enforce supported patterns: 2 of 4 or 3 of 5
+        const SUPPORTED_PATTERNS = [[4, 2], [5, 3]];
+        const validPattern = SUPPORTED_PATTERNS.some(([c, a]) => numChoices === c && uniqueIndexes.length === a);
+        if (!validPattern) {
+          throw new Error(`${prefix} multi-select must use 2-of-4 or 3-of-5 pattern (got ${uniqueIndexes.length} of ${numChoices}).`);
         }
       }
       if (typeof question.explanation !== 'string' || !question.explanation.trim()) throw new Error(`${prefix} is missing an explanation.`);
@@ -1912,9 +2103,10 @@ window.COHESITY_QUESTION_BANK =
                 content: [
                   'Create exactly 50 Cohesity Certified Architect Expert practice questions.',
                   `Allowed domains: ${selectedDomains.join(', ') || DOMAIN_ORDER.join(', ')}.`,
-                  'Use this JSON schema exactly: {"questions":[{"domain":"...","question":"...","choices":["A","B","C","D"],"correctAnswerIndex":0,"explanation":"...","citationTitle":"...","citationUrl":"https://..."},{"domain":"...","question":"...","choices":["A","B","C","D"],"correctAnswerIndexes":[0,2],"selectCount":2,"explanation":"...","citationTopic":"Cohesity certification overview / study topic"}]}.',
-                  'Each question must include either correctAnswerIndex (single-answer) or correctAnswerIndexes (multi-select).',
-                  'Include a realistic mix of scenario-based single-answer and multi-select questions (for example select two/select three).',
+                  'Use this JSON schema exactly: {"questions":[{"domain":"...","question":"...","choices":["A","B","C","D"],"correctAnswerIndex":0,"explanation":"...","citationTitle":"...","citationUrl":"https://..."},{"domain":"...","question":"...","choices":["A","B","C","D","E"],"correctAnswerIndexes":[0,2,4],"selectCount":3,"explanation":"...","citationTopic":"Cohesity certification overview / study topic"}]}.',
+                  'Each question must include either correctAnswerIndex (single-answer, 4 choices) or correctAnswerIndexes (multi-select).',
+                  'Multi-select questions must use ONLY these two patterns: exactly 4 choices with 2 correct answers (correctAnswerIndexes length 2), OR exactly 5 choices with 3 correct answers (correctAnswerIndexes length 3). No other multi-select patterns are accepted.',
+                  'Include a realistic mix of scenario-based single-answer and multi-select questions (roughly 60% single, 40% multi-select).',
                   'If you cannot provide an official Cohesity citation URL for a question, use citationTopic: "Cohesity certification overview / study topic" instead of citationTitle/citationUrl.',
                   'Keep questions aligned to architecture, design, security, integrations, and troubleshooting topics from the Cohesity Architect Expert exam. Avoid unsupported claims and prefer official Cohesity docs/support/developer/product pages where possible.'
                 ].join(' ')
@@ -1945,6 +2137,8 @@ window.COHESITY_QUESTION_BANK =
 
         if (!state.questions.length) {
           resetExam(validatedQuestions);
+          saveToHistory(validatedQuestions, 'OpenAI', selectedDomains, model);
+          renderHistoryDropdown();
           examStatus.textContent = 'Generated a 50-question OpenAI exam.';
         } else {
           state.submitted = false;
@@ -1952,6 +2146,8 @@ window.COHESITY_QUESTION_BANK =
           setSummary('');
           state.questions = [...state.questions, ...validatedQuestions];
           stopTimer();
+          saveToHistory(validatedQuestions, 'OpenAI', selectedDomains, model);
+          renderHistoryDropdown();
           examStatus.textContent = `Appended 50 OpenAI questions. Exam now contains ${state.questions.length} questions.`;
           renderQuestions();
         }
@@ -1970,10 +2166,24 @@ window.COHESITY_QUESTION_BANK =
       state.showAllAnswers = !state.showAllAnswers;
       renderQuestions();
     });
+    clearRevealButton.addEventListener('click', () => {
+      state.revealed = new Set();
+      state.showAllAnswers = false;
+      renderQuestions();
+    });
+    exportConfigButton.addEventListener('click', exportConfig);
     refreshModelsButton.addEventListener('click', loadModelsFromAPI);
+    forgetApiKeyButton.addEventListener('click', forgetApiKey);
     appendOpenAIButton.addEventListener('click', appendOpenAIQuestions);
+    loadHistoryButton.addEventListener('click', loadHistorySet);
+    clearHistoryButton.addEventListener('click', clearAllHistory);
 
+    openaiKeyInput.addEventListener('input', saveApiKeyAndModel);
+    openaiModelInput.addEventListener('change', saveApiKeyAndModel);
+
+    restoreApiKeyAndModel();
     createDomainControls();
+    renderHistoryDropdown();
     renderQuestions();
     examStatus.textContent = `Ready with ${QUESTION_BANK.length} built-in questions in the local bank.`;
   </script>
