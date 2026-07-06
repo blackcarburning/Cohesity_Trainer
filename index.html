@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cohesity Architect Expert Practice Exam</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f3f6fb;
+      --panel: #ffffff;
+      --panel-alt: #eef3ff;
+      --text: #1c2434;
+      --muted: #5c687f;
+      --accent: #315efb;
+      --accent-dark: #1f47d6;
+      --success: #16794b;
+      --danger: #b42318;
+      --border: #d6deef;
+      --shadow: 0 12px 30px rgba(24, 39, 75, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: linear-gradient(180deg, #f9fbff 0%, var(--bg) 100%);
+      color: var(--text);
+      line-height: 1.5;
+    }
+    a { color: var(--accent-dark); }
+    .page {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 24px 16px 64px;
+    }
+    .hero, .panel, .question-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+    }
+    .hero {
+      padding: 28px;
+      margin-bottom: 20px;
+      background: linear-gradient(135deg, #ffffff 0%, #eef3ff 100%);
+    }
+    h1, h2, h3, p { margin-top: 0; }
+    .lead { color: var(--muted); max-width: 78ch; }
+    .grid {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      align-items: start;
+    }
+    .panel { padding: 20px; }
+    .panel h2 { margin-bottom: 10px; }
+    .help, .small-note, .status { color: var(--muted); font-size: 0.95rem; }
+    .warning {
+      background: #fff6e5;
+      border: 1px solid #f7d48b;
+      border-radius: 12px;
+      padding: 12px 14px;
+      color: #7a4e00;
+      margin-top: 10px;
+    }
+    .controls-row,
+    .timer-row,
+    .button-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .button-row { margin-top: 12px; }
+    fieldset {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px;
+      margin: 0;
+    }
+    legend { padding: 0 6px; font-weight: 700; }
+    .domain-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 8px 14px;
+    }
+    label { font-weight: 600; }
+    .check-label { display: flex; gap: 8px; align-items: flex-start; font-weight: 500; }
+    input[type="number"], input[type="password"], input[type="text"] {
+      width: 100%;
+      max-width: 320px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      font: inherit;
+      background: #fff;
+      color: var(--text);
+    }
+    button {
+      border: 0;
+      border-radius: 12px;
+      padding: 12px 16px;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      background: var(--accent);
+      color: #fff;
+      transition: transform 0.15s ease, background 0.15s ease;
+    }
+    button:hover:not(:disabled) { background: var(--accent-dark); transform: translateY(-1px); }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
+    .secondary { background: #dfe8ff; color: #183066; }
+    .ghost { background: transparent; color: var(--accent-dark); border: 1px solid var(--border); }
+    .danger { background: var(--danger); }
+    .summary {
+      padding: 18px 20px;
+      border-radius: 16px;
+      background: #ebfdf3;
+      border: 1px solid #b7ebcc;
+      color: #0e5f39;
+      margin-bottom: 18px;
+      display: none;
+    }
+    .summary.expired {
+      background: #fff2f0;
+      border-color: #f4c1ba;
+      color: #8b1e12;
+    }
+    .timer-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: #eff4ff;
+      color: #1e3b89;
+      font-weight: 700;
+      border: 1px solid #cad8ff;
+    }
+    .timer-pill.expired { background: #fff2f0; color: #8b1e12; border-color: #f4c1ba; }
+    .question-list { display: grid; gap: 16px; }
+    .question-card { padding: 20px; }
+    .question-head {
+      display: flex;
+      gap: 12px;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .pill-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      background: var(--panel-alt);
+      color: #28418d;
+    }
+    .pill.source { background: #f2ecff; color: #5e34b8; }
+    .choices { display: grid; gap: 10px; margin: 14px 0; }
+    .choice {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: #fbfcff;
+    }
+    .choice.correct { border-color: #67c08d; background: #eefbf3; }
+    .choice.incorrect { border-color: #f1a8a8; background: #fff5f5; }
+    .choice input { margin-top: 3px; }
+    .answer-panel {
+      margin-top: 14px;
+      padding: 14px;
+      border-radius: 14px;
+      border: 1px solid #d7e1fb;
+      background: #f7f9ff;
+      display: none;
+    }
+    .answer-panel.visible { display: block; }
+    .meta-list { margin: 8px 0 0; padding-left: 18px; }
+    .empty-state {
+      text-align: center;
+      padding: 32px 18px;
+      color: var(--muted);
+      border: 1px dashed var(--border);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.6);
+    }
+    .inline-note { font-size: 0.92rem; color: var(--muted); }
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+    @media (max-width: 720px) {
+      .hero, .panel, .question-card { border-radius: 16px; }
+      .page { padding-inline: 12px; }
+      .controls-row, .timer-row, .button-row { align-items: stretch; }
+      button { width: 100%; }
+      input[type="number"], input[type="password"], input[type="text"] { max-width: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <section class="hero">
+      <h1>Cohesity Certified Architect Expert Practice Exam</h1>
+      <p class="lead">Generate a 50-question practice exam aligned to the Cohesity Architect Expert overview, optionally add a timer, reveal answers when you want them, and append 50 more questions client-side with your own OpenAI API key. Built-in questions prefer unique selection; if your active domain filters reduce the pool below 50, the app will repeat questions as needed to reach 50.</p>
+      <div class="timer-row">
+        <div id="timerPill" class="timer-pill" hidden aria-live="polite">Timer off</div>
+        <div class="small-note">Questions cover architecture, discovery and design, security, integrations, and troubleshooting topics from the certification overview.</div>
+      </div>
+    </section>
+
+    <div class="grid">
+      <section class="panel" aria-labelledby="exam-controls-heading">
+        <h2 id="exam-controls-heading">Start or reset an exam</h2>
+        <fieldset>
+          <legend>Exam domains</legend>
+          <div class="domain-grid" id="domainFilters"></div>
+        </fieldset>
+        <div class="controls-row" style="margin-top: 14px;">
+          <div>
+            <label for="timerMinutes">Optional time limit (minutes)</label>
+            <input id="timerMinutes" type="number" min="1" step="1" inputmode="numeric" placeholder="Leave blank for no timer" />
+          </div>
+        </div>
+        <div class="button-row">
+          <button id="generateButton" type="button">Generate 50 built-in questions</button>
+          <button id="submitButton" type="button" class="secondary" disabled>Submit exam</button>
+          <button id="toggleAnswersButton" type="button" class="ghost" disabled>Show all answers</button>
+        </div>
+        <p class="help" id="examStatus" aria-live="polite">No exam generated yet.</p>
+      </section>
+
+      <section class="panel" aria-labelledby="openai-heading">
+        <h2 id="openai-heading">Append 50 more with OpenAI</h2>
+        <p class="help">Use your own API key in this browser session to request 50 additional multiple-choice questions in the same schema. The key is never stored by this page.</p>
+        <div class="controls-row">
+          <div>
+            <label for="openaiKey">OpenAI API key</label>
+            <input id="openaiKey" type="password" autocomplete="off" spellcheck="false" placeholder="sk-..." />
+          </div>
+          <div>
+            <label for="openaiModel">Model</label>
+            <input id="openaiModel" type="text" value="gpt-4.1-mini" autocomplete="off" spellcheck="false" />
+          </div>
+        </div>
+        <div class="button-row">
+          <button id="appendOpenAIButton" type="button" class="secondary">Generate 50 more with OpenAI</button>
+        </div>
+        <div class="warning">Browser-side API calls expose the key to this page context. Avoid using a personal or organization key on a shared/public machine.</div>
+      </section>
+    </div>
+
+    <section id="summary" class="summary" aria-live="polite"></section>
+
+    <section aria-labelledby="question-list-heading" style="margin-top: 20px;">
+      <h2 id="question-list-heading">Practice questions</h2>
+      <div id="questionList" class="question-list">
+        <div class="empty-state">Choose your domains, optionally set a timer, and generate an exam to begin.</div>
+      </div>
+    </section>
+  </div>
+
+  <script src="./questions.js"></script>
+  <script>
+    const QUESTION_BANK = Array.isArray(window.COHESITY_QUESTION_BANK) ? window.COHESITY_QUESTION_BANK : [];
+    const DOMAIN_ORDER = [
+      'Architecture',
+      'Discovery & Design',
+      'Security-focused Solutions',
+      'Third-party Integrations',
+      'Gap Analysis & Troubleshooting'
+    ];
+
+    const state = {
+      questions: [],
+      answers: new Map(),
+      revealed: new Set(),
+      submitted: false,
+      showAllAnswers: false,
+      timerId: null,
+      expiresAt: null,
+      expired: false
+    };
+
+    const domainFilters = document.getElementById('domainFilters');
+    const timerMinutesInput = document.getElementById('timerMinutes');
+    const generateButton = document.getElementById('generateButton');
+    const submitButton = document.getElementById('submitButton');
+    const toggleAnswersButton = document.getElementById('toggleAnswersButton');
+    const appendOpenAIButton = document.getElementById('appendOpenAIButton');
+    const openaiKeyInput = document.getElementById('openaiKey');
+    const openaiModelInput = document.getElementById('openaiModel');
+    const questionList = document.getElementById('questionList');
+    const summary = document.getElementById('summary');
+    const examStatus = document.getElementById('examStatus');
+    const timerPill = document.getElementById('timerPill');
+
+    function createDomainControls() {
+      domainFilters.innerHTML = '';
+      DOMAIN_ORDER.forEach((domain, index) => {
+        const id = `domain-${index}`;
+        const wrapper = document.createElement('label');
+        wrapper.className = 'check-label';
+        wrapper.htmlFor = id;
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.id = id;
+        checkbox.value = domain;
+        checkbox.checked = true;
+        const text = document.createElement('span');
+        text.textContent = domain;
+        wrapper.append(checkbox, text);
+        domainFilters.appendChild(wrapper);
+      });
+    }
+
+    function getSelectedDomains() {
+      return Array.from(domainFilters.querySelectorAll('input[type="checkbox"]:checked')).map((input) => input.value);
+    }
+
+    function shuffle(array) {
+      const copy = [...array];
+      for (let i = copy.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    function sampleQuestions(pool, count) {
+      if (!pool.length) return [];
+      const picked = [];
+      let available = shuffle(pool);
+      while (picked.length < count) {
+        if (!available.length) available = shuffle(pool);
+        picked.push({ ...available.pop() });
+      }
+      return picked.map((item, index) => ({ ...item, instanceId: `${item.id}-${index + 1}-${Math.random().toString(36).slice(2, 8)}`, source: item.source || 'Built-in' }));
+    }
+
+    function formatTime(ms) {
+      const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = totalSeconds % 60;
+      return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    }
+
+    function stopTimer() {
+      if (state.timerId) {
+        window.clearInterval(state.timerId);
+        state.timerId = null;
+      }
+      state.expiresAt = null;
+      timerPill.hidden = true;
+      timerPill.classList.remove('expired');
+    }
+
+    function startTimer(minutes) {
+      stopTimer();
+      if (!Number.isFinite(minutes) || minutes <= 0) {
+        examStatus.textContent = `Exam generated with ${state.questions.length} questions. Timer disabled.`;
+        return;
+      }
+      state.expiresAt = Date.now() + (minutes * 60 * 1000);
+      timerPill.hidden = false;
+      updateTimer();
+      state.timerId = window.setInterval(updateTimer, 1000);
+    }
+
+    function updateTimer() {
+      if (!state.expiresAt) return;
+      const remaining = state.expiresAt - Date.now();
+      timerPill.textContent = `Time remaining: ${formatTime(remaining)}`;
+      if (remaining <= 0) {
+        timerPill.textContent = 'Time expired';
+        timerPill.classList.add('expired');
+        window.clearInterval(state.timerId);
+        state.timerId = null;
+        if (!state.submitted) {
+          state.expired = true;
+          submitExam(true);
+        }
+      }
+    }
+
+    function updateControls() {
+      const hasQuestions = state.questions.length > 0;
+      submitButton.disabled = !hasQuestions || state.submitted;
+      toggleAnswersButton.disabled = !hasQuestions;
+      toggleAnswersButton.textContent = state.showAllAnswers ? 'Hide all answers' : 'Show all answers';
+    }
+
+    function setSummary(message, expired = false) {
+      summary.style.display = message ? 'block' : 'none';
+      summary.classList.toggle('expired', expired);
+      summary.textContent = message;
+    }
+
+    function citationMarkup(question) {
+      if (question.citationUrl && question.citationTitle) {
+        const anchor = document.createElement('a');
+        anchor.href = question.citationUrl;
+        anchor.target = '_blank';
+        anchor.rel = 'noreferrer noopener';
+        anchor.textContent = question.citationTitle;
+        return anchor;
+      }
+      const span = document.createElement('span');
+      span.textContent = question.citationTopic || 'Cohesity certification overview / study topic';
+      return span;
+    }
+
+    function renderQuestions() {
+      updateControls();
+      questionList.innerHTML = '';
+      if (!state.questions.length) {
+        questionList.innerHTML = '<div class="empty-state">Choose your domains, optionally set a timer, and generate an exam to begin.</div>';
+        return;
+      }
+
+      const fragment = document.createDocumentFragment();
+      state.questions.forEach((question, index) => {
+        const card = document.createElement('article');
+        card.className = 'question-card';
+
+        const head = document.createElement('div');
+        head.className = 'question-head';
+        const titleWrap = document.createElement('div');
+        const title = document.createElement('h3');
+        title.textContent = `${index + 1}. ${question.question}`;
+        const note = document.createElement('p');
+        note.className = 'inline-note';
+        note.textContent = state.submitted ? 'Submitted result shown below.' : 'Select one answer. Use Reveal answer if you want to self-check before submitting.';
+        titleWrap.append(title, note);
+
+        const pills = document.createElement('div');
+        pills.className = 'pill-row';
+        const domainPill = document.createElement('span');
+        domainPill.className = 'pill';
+        domainPill.textContent = question.domain;
+        const sourcePill = document.createElement('span');
+        sourcePill.className = 'pill source';
+        sourcePill.textContent = question.source;
+        pills.append(domainPill, sourcePill);
+        head.append(titleWrap, pills);
+
+        const choiceList = document.createElement('div');
+        choiceList.className = 'choices';
+        question.choices.forEach((choice, choiceIndex) => {
+          const label = document.createElement('label');
+          label.className = 'choice';
+          const savedAnswer = state.answers.get(question.instanceId);
+          const isCorrect = choiceIndex === question.correctAnswerIndex;
+          if (state.submitted && isCorrect) label.classList.add('correct');
+          if (state.submitted && savedAnswer === choiceIndex && !isCorrect) label.classList.add('incorrect');
+
+          const input = document.createElement('input');
+          input.type = 'radio';
+          input.name = `question-${question.instanceId}`;
+          input.value = String(choiceIndex);
+          input.checked = savedAnswer === choiceIndex;
+          input.disabled = state.submitted;
+          input.addEventListener('change', () => {
+            state.answers.set(question.instanceId, choiceIndex);
+          });
+
+          const text = document.createElement('span');
+          text.textContent = choice;
+          label.append(input, text);
+          choiceList.appendChild(label);
+        });
+
+        const revealButton = document.createElement('button');
+        revealButton.type = 'button';
+        revealButton.className = 'ghost';
+        revealButton.disabled = state.showAllAnswers && !state.submitted;
+        revealButton.textContent = state.showAllAnswers && !state.submitted
+          ? 'Answer shown globally'
+          : (state.revealed.has(question.instanceId) || state.showAllAnswers ? 'Hide answer' : 'Reveal answer');
+        revealButton.addEventListener('click', () => {
+          if (state.revealed.has(question.instanceId)) {
+            state.revealed.delete(question.instanceId);
+          } else {
+            state.revealed.add(question.instanceId);
+          }
+          renderQuestions();
+        });
+
+        const answerPanel = document.createElement('div');
+        answerPanel.className = 'answer-panel';
+        const showPanel = state.submitted || state.showAllAnswers || state.revealed.has(question.instanceId);
+        answerPanel.classList.toggle('visible', showPanel);
+
+        const answerTitle = document.createElement('strong');
+        const selected = state.answers.get(question.instanceId);
+        const selectedLabel = Number.isInteger(selected) ? question.choices[selected] : 'No answer selected';
+        answerTitle.textContent = `Correct answer: ${question.choices[question.correctAnswerIndex]}`;
+        const explanation = document.createElement('p');
+        explanation.textContent = question.explanation;
+        const meta = document.createElement('ul');
+        meta.className = 'meta-list';
+
+        if (state.submitted) {
+          const selectedItem = document.createElement('li');
+          selectedItem.textContent = `Your answer: ${selectedLabel}`;
+          meta.appendChild(selectedItem);
+        }
+
+        const citationItem = document.createElement('li');
+        citationItem.textContent = 'Citation: ';
+        citationItem.appendChild(citationMarkup(question));
+        meta.appendChild(citationItem);
+        answerPanel.append(answerTitle, explanation, meta);
+
+        card.append(head, choiceList, revealButton, answerPanel);
+        fragment.appendChild(card);
+      });
+      questionList.appendChild(fragment);
+    }
+
+    function scoreExam() {
+      return state.questions.reduce((score, question) => score + (state.answers.get(question.instanceId) === question.correctAnswerIndex ? 1 : 0), 0);
+    }
+
+    function submitExam(expired = false) {
+      if (!state.questions.length || state.submitted) return;
+      state.submitted = true;
+      const score = scoreExam();
+      const answered = state.answers.size;
+      const total = state.questions.length;
+      setSummary(expired ? `Time expired. The exam was auto-submitted. Score: ${score}/${total}. Answered: ${answered}/${total}.` : `Exam submitted. Score: ${score}/${total}. Answered: ${answered}/${total}.`, expired);
+      examStatus.textContent = expired ? 'Time expired and the exam has been auto-submitted.' : 'Exam submitted. Review explanations and citations below.';
+      if (!expired) stopTimer();
+      updateControls();
+      renderQuestions();
+    }
+
+    function resetExam(questions) {
+      state.questions = questions;
+      state.answers = new Map();
+      state.revealed = new Set();
+      state.submitted = false;
+      state.showAllAnswers = false;
+      state.expired = false;
+      setSummary('');
+      const timerMinutes = Number.parseInt(timerMinutesInput.value, 10);
+      startTimer(Number.isFinite(timerMinutes) ? timerMinutes : NaN);
+      examStatus.textContent = `Exam generated with ${questions.length} questions.`;
+      renderQuestions();
+    }
+
+    function generateBuiltInExam() {
+      const selectedDomains = getSelectedDomains();
+      if (!selectedDomains.length) {
+        examStatus.textContent = 'Select at least one domain before generating an exam.';
+        return;
+      }
+      const pool = QUESTION_BANK.filter((question) => selectedDomains.includes(question.domain));
+      if (!pool.length) {
+        examStatus.textContent = 'No built-in questions matched the current domain filters.';
+        return;
+      }
+      const questions = sampleQuestions(pool, 50);
+      resetExam(questions);
+    }
+
+    function extractJsonString(content) {
+      const trimmed = content.trim();
+      if (trimmed.startsWith('```')) {
+        return trimmed.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
+      }
+      return trimmed;
+    }
+
+    function validateGeneratedQuestion(question, index) {
+      const prefix = `Generated question ${index + 1}`;
+      if (!question || typeof question !== 'object') throw new Error(`${prefix} is not an object.`);
+      if (typeof question.question !== 'string' || !question.question.trim()) throw new Error(`${prefix} is missing question text.`);
+      if (!Array.isArray(question.choices) || question.choices.length !== 4 || question.choices.some((choice) => typeof choice !== 'string' || !choice.trim())) {
+        throw new Error(`${prefix} must include exactly 4 non-empty choices.`);
+      }
+      if (!Number.isInteger(question.correctAnswerIndex) || question.correctAnswerIndex < 0 || question.correctAnswerIndex > 3) {
+        throw new Error(`${prefix} must include a correctAnswerIndex from 0 to 3.`);
+      }
+      if (typeof question.explanation !== 'string' || !question.explanation.trim()) throw new Error(`${prefix} is missing an explanation.`);
+      if (typeof question.domain !== 'string' || !question.domain.trim()) throw new Error(`${prefix} is missing a domain.`);
+      const hasUrlCitation = typeof question.citationTitle === 'string' && question.citationTitle.trim() && typeof question.citationUrl === 'string' && question.citationUrl.trim();
+      const hasTopicCitation = typeof question.citationTopic === 'string' && question.citationTopic.trim();
+      if (!hasUrlCitation && !hasTopicCitation) {
+        throw new Error(`${prefix} must include either citationTitle + citationUrl or citationTopic.`);
+      }
+      return {
+        id: `openai-${Date.now()}-${index + 1}`,
+        domain: question.domain.trim(),
+        question: question.question.trim(),
+        choices: question.choices.map((choice) => choice.trim()),
+        correctAnswerIndex: question.correctAnswerIndex,
+        explanation: question.explanation.trim(),
+        citationTitle: hasUrlCitation ? question.citationTitle.trim() : undefined,
+        citationUrl: hasUrlCitation ? question.citationUrl.trim() : undefined,
+        citationTopic: hasTopicCitation ? question.citationTopic.trim() : undefined,
+        source: 'OpenAI'
+      };
+    }
+
+    async function appendOpenAIQuestions() {
+      const apiKey = openaiKeyInput.value.trim();
+      const model = openaiModelInput.value.trim() || 'gpt-4.1-mini';
+      if (!apiKey) {
+        examStatus.textContent = 'Enter an OpenAI API key before requesting generated questions.';
+        return;
+      }
+
+      appendOpenAIButton.disabled = true;
+      const previousLabel = appendOpenAIButton.textContent;
+      appendOpenAIButton.textContent = 'Requesting 50 more questions…';
+      examStatus.textContent = 'Requesting 50 more questions from OpenAI...';
+
+      try {
+        const selectedDomains = getSelectedDomains();
+        const headers = {
+          'Content-Type': 'application/json'
+        };
+        headers['Authorization'] = 'Bearer ' + apiKey;
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            model,
+            temperature: 0.7,
+            response_format: { type: 'json_object' },
+            messages: [
+              {
+                role: 'system',
+                content: 'You create exam-quality multiple-choice questions and must return strict JSON only.'
+              },
+              {
+                role: 'user',
+                content: [
+                  'Create exactly 50 Cohesity Certified Architect Expert practice questions.',
+                  `Allowed domains: ${selectedDomains.join(', ') || DOMAIN_ORDER.join(', ')}.`,
+                  'Use this JSON schema exactly: {"questions":[{"domain":"...","question":"...","choices":["A","B","C","D"],"correctAnswerIndex":0,"explanation":"...","citationTitle":"...","citationUrl":"https://..."}]}',
+                  'If you cannot provide an official Cohesity citation URL for a question, use citationTopic: "Cohesity certification overview / study topic" instead of citationTitle/citationUrl.',
+                  'Keep questions aligned to architecture, design, security, integrations, and troubleshooting topics from the Cohesity Architect Expert exam. Avoid unsupported claims and prefer official Cohesity docs/support/developer/product pages where possible.'
+                ].join(' ')
+              }
+            ]
+          })
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`OpenAI request failed (${response.status}): ${errorText}`);
+        }
+
+        const payload = await response.json();
+        const content = payload?.choices?.[0]?.message?.content;
+        if (typeof content !== 'string' || !content.trim()) {
+          throw new Error('OpenAI response did not include JSON content.');
+        }
+
+        const parsed = JSON.parse(extractJsonString(content));
+        if (!parsed || !Array.isArray(parsed.questions) || parsed.questions.length !== 50) {
+          throw new Error('OpenAI response must contain exactly 50 questions.');
+        }
+        const validatedQuestions = parsed.questions.map(validateGeneratedQuestion).map((question, index) => ({
+          ...question,
+          instanceId: `${question.id}-${index + 1}-${Math.random().toString(36).slice(2, 8)}`
+        }));
+
+        if (!state.questions.length) {
+          resetExam(validatedQuestions);
+          examStatus.textContent = 'Generated a 50-question OpenAI exam.';
+        } else {
+          state.submitted = false;
+          state.expired = false;
+          setSummary('');
+          state.questions = [...state.questions, ...validatedQuestions];
+          stopTimer();
+          examStatus.textContent = `Appended 50 OpenAI questions. Exam now contains ${state.questions.length} questions.`;
+          renderQuestions();
+        }
+      } catch (error) {
+        console.error(error);
+        examStatus.textContent = error instanceof Error ? error.message : 'Failed to generate OpenAI questions.';
+      } finally {
+        appendOpenAIButton.disabled = false;
+        appendOpenAIButton.textContent = previousLabel;
+      }
+    }
+
+    generateButton.addEventListener('click', generateBuiltInExam);
+    submitButton.addEventListener('click', () => submitExam(false));
+    toggleAnswersButton.addEventListener('click', () => {
+      state.showAllAnswers = !state.showAllAnswers;
+      renderQuestions();
+    });
+    appendOpenAIButton.addEventListener('click', appendOpenAIQuestions);
+
+    createDomainControls();
+    renderQuestions();
+    examStatus.textContent = `Ready with ${QUESTION_BANK.length} built-in questions in the local bank.`;
+  </script>
+</body>
+</html>
