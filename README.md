@@ -50,10 +50,12 @@ Open `index.html` in a browser to use the Cohesity Certified Architect Expert pr
   - `Select all that apply (2 of 4).` — 2 correct answers out of 4 choices
   - `Select all that apply (3 of 5).` — 3 correct answers out of 5 choices
 - **Only two patterns are supported:** 2-of-4 and 3-of-5. This constraint applies to both built-in questions and OpenAI-generated questions.
+- **Multi-select questions are capped at 10 per 50-question exam.** Each generated set contains at most 10 multi-select questions; the remaining at least 40 are single-answer questions. This mirrors the balance found in typical Cohesity certification practice exams.
 - Scoring is **strict**: a multi-select question is correct only when the selected set exactly matches the correct answer set.
 - Checkboxes are used for multi-select questions; radio buttons for single-answer questions.
 - The app enforces the maximum selection count: once you have selected the required number of answers you cannot add more.
-- OpenAI generation prompts are restricted to these patterns. Generated questions that do not conform are rejected with an error.
+- OpenAI generation prompts are restricted to these patterns and the 10-question cap. Generated batches with more than 10 multi-select questions are rejected with an error so you can regenerate.
+- If domain filtering limits the available single-answer pool, the app maintains the ≤10 multi-select cap whenever possible. A status message is shown if the filtered pool makes this impossible (e.g. a domain with only multi-select questions).
 
 ## Notes
 - Built-in questions prefer unique selection. If active filters leave fewer than 50 matching questions, the page repeats questions as needed to reach 50.

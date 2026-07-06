@@ -1384,9 +1384,17 @@ window.COHESITY_QUESTION_BANK =
 ];
   </script>
   <script>
+    // Supported multi-select patterns: [choiceCount, correctCount]
+    const MULTI_SELECT_PATTERNS = [[4, 2], [5, 3]];
+
     function normalizeQuestion(question, prefix = 'Question') {
       if (!question || typeof question !== 'object') throw new Error(`${prefix} is not an object.`);
-      if (!Array.isArray(question.choices) || question.choices.length !== 4) throw new Error(`${prefix} must include exactly 4 choices.`);
+      if (!Array.isArray(question.choices) || question.choices.length < 4 || question.choices.length > 5) {
+        throw new Error(`${prefix} must include 4 or 5 choices.`);
+      }
+      if (question.choices.some((c) => typeof c !== 'string' || !c.trim())) {
+        throw new Error(`${prefix} choices must be non-empty, non-whitespace strings.`);
+      }
       const hasSingle = Number.isInteger(question.correctAnswerIndex);
       const hasMulti = Array.isArray(question.correctAnswerIndexes);
       if (hasSingle && hasMulti) throw new Error(`${prefix} must not include both correctAnswerIndex and correctAnswerIndexes.`);
@@ -1408,6 +1416,11 @@ window.COHESITY_QUESTION_BANK =
           throw new Error(`${prefix} correctAnswerIndexes must be fewer than all choices.`);
         }
         indexes = deduped.sort((a, b) => a - b);
+        // Enforce supported multi-select patterns: 2-of-4 or 3-of-5
+        const validPattern = MULTI_SELECT_PATTERNS.some(([c, a]) => question.choices.length === c && indexes.length === a);
+        if (!validPattern) {
+          throw new Error(`${prefix} multi-select must use 2-of-4 or 3-of-5 pattern (got ${indexes.length} of ${question.choices.length}).`);
+        }
       } else {
         if (question.correctAnswerIndex < 0 || question.correctAnswerIndex >= question.choices.length) {
           throw new Error(`${prefix} has invalid correctAnswerIndex.`);
@@ -1449,9 +1462,18 @@ window.COHESITY_QUESTION_BANK =
       return selectedIndexes.every((value, index) => value === correctIndexes[index]);
     }
 
-    const QUESTION_BANK = Array.isArray(window.COHESITY_QUESTION_BANK)
-      ? window.COHESITY_QUESTION_BANK.map((question, index) => normalizeQuestion(question, `Built-in question ${index + 1}`))
-      : [];
+    let QUESTION_BANK = [];
+    let QUESTION_BANK_ERRORS = [];
+    if (Array.isArray(window.COHESITY_QUESTION_BANK)) {
+      window.COHESITY_QUESTION_BANK.forEach((question, index) => {
+        try {
+          QUESTION_BANK.push(normalizeQuestion(question, `Built-in question ${index + 1}`));
+        } catch (e) {
+          QUESTION_BANK_ERRORS.push(e.message);
+          console.error('Skipping invalid built-in question:', e.message);
+        }
+      });
+    }
     const DOMAIN_ORDER = [
       'Architecture',
       'Discovery & Design',
@@ -1937,10 +1959,33 @@ window.COHESITY_QUESTION_BANK =
         examStatus.textContent = 'No built-in questions matched the current domain filters.';
         return;
       }
-      const questions = sampleQuestions(pool, 50);
+
+      const MAX_MULTI = 10;
+      const TOTAL = 50;
+      const multiPool = pool.filter((q) => q.selectCount > 1);
+      const singlePool = pool.filter((q) => q.selectCount === 1);
+
+      // Cap multi-select at MAX_MULTI; wantedMulti is min(pool, cap) so sampleQuestions
+      // receives a count <= pool size — no unwanted repetition for multi-select questions.
+      const wantedMulti = Math.min(MAX_MULTI, multiPool.length);
+      const wantedSingle = TOTAL - wantedMulti;
+
+      const multiQuestions = wantedMulti > 0 ? sampleQuestions(multiPool, wantedMulti) : [];
+      let singleQuestions;
+      let statusNote = '';
+      if (singlePool.length > 0) {
+        singleQuestions = sampleQuestions(singlePool, wantedSingle);
+      } else {
+        // No single-answer questions available — fill from multi-select pool
+        singleQuestions = sampleQuestions(multiPool, wantedSingle);
+        statusNote = 'Note: domain filter has only multi-select questions; the balance of ≤10 multi-select per 50 could not be maintained.';
+      }
+
+      const questions = shuffle([...multiQuestions, ...singleQuestions]);
       resetExam(questions);
       saveToHistory(questions, 'Built-in', selectedDomains, null);
       renderHistoryDropdown();
+      if (statusNote) examStatus.textContent += ' ' + statusNote;
     }
 
     function extractJsonString(content) {
@@ -2106,7 +2151,7 @@ window.COHESITY_QUESTION_BANK =
                   'Use this JSON schema exactly: {"questions":[{"domain":"...","question":"...","choices":["A","B","C","D"],"correctAnswerIndex":0,"explanation":"...","citationTitle":"...","citationUrl":"https://..."},{"domain":"...","question":"...","choices":["A","B","C","D","E"],"correctAnswerIndexes":[0,2,4],"selectCount":3,"explanation":"...","citationTopic":"Cohesity certification overview / study topic"}]}.',
                   'Each question must include either correctAnswerIndex (single-answer, 4 choices) or correctAnswerIndexes (multi-select).',
                   'Multi-select questions must use ONLY these two patterns: exactly 4 choices with 2 correct answers (correctAnswerIndexes length 2), OR exactly 5 choices with 3 correct answers (correctAnswerIndexes length 3). No other multi-select patterns are accepted.',
-                  'Include a realistic mix of scenario-based single-answer and multi-select questions (roughly 60% single, 40% multi-select).',
+                  'IMPORTANT: Include NO MORE THAN 10 multi-select questions out of the 50 total. The remaining 40 or more questions must be single-answer questions (correctAnswerIndex, 4 choices). This balance of at most 10 multi-select per 50 is a hard requirement.',
                   'If you cannot provide an official Cohesity citation URL for a question, use citationTopic: "Cohesity certification overview / study topic" instead of citationTitle/citationUrl.',
                   'Keep questions aligned to architecture, design, security, integrations, and troubleshooting topics from the Cohesity Architect Expert exam. Avoid unsupported claims and prefer official Cohesity docs/support/developer/product pages where possible.'
                 ].join(' ')
@@ -2134,6 +2179,11 @@ window.COHESITY_QUESTION_BANK =
           ...question,
           instanceId: `${question.id}-${index + 1}-${Math.random().toString(36).slice(2, 8)}`
         }));
+
+        const openaiMultiCount = validatedQuestions.filter((q) => q.selectCount > 1).length;
+        if (openaiMultiCount > 10) {
+          throw new Error(`OpenAI returned ${openaiMultiCount} multi-select questions but the maximum allowed is 10 per 50. Please try generating again.`);
+        }
 
         if (!state.questions.length) {
           resetExam(validatedQuestions);
@@ -2185,7 +2235,11 @@ window.COHESITY_QUESTION_BANK =
     createDomainControls();
     renderHistoryDropdown();
     renderQuestions();
-    examStatus.textContent = `Ready with ${QUESTION_BANK.length} built-in questions in the local bank.`;
+    if (QUESTION_BANK_ERRORS.length) {
+      examStatus.textContent = `Ready with ${QUESTION_BANK.length} built-in questions. Warning: ${QUESTION_BANK_ERRORS.length} question(s) skipped due to validation errors (see console).`;
+    } else {
+      examStatus.textContent = `Ready with ${QUESTION_BANK.length} built-in questions in the local bank.`;
+    }
   </script>
 </body>
 </html>
