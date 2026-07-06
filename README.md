@@ -1,6 +1,6 @@
 # Cohesity_Trainer
 
-Open `index.html` in a browser to use the Cohesity Certified Architect Expert practice exam page.
+Open `index.html` in a browser to use the Cohesity Certified Architect Expert practice exam page. The app is fully self-contained in this single file (including the built-in question bank).
 
 ## Features
 - Generate a 50-question built-in multiple-choice practice exam from the local question bank.
