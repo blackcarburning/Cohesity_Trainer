@@ -47,11 +47,17 @@
     }
     h1, h2, h3, p { margin-top: 0; }
     .lead { color: var(--muted); max-width: 78ch; }
-    .grid {
+    .app-layout {
       display: grid;
+      grid-template-columns: minmax(0, 1fr) 360px;
       gap: 16px;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
       align-items: start;
+    }
+    .main-col {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      min-width: 0;
     }
     .panel { padding: 20px; }
     .panel h2 { margin-bottom: 10px; }
@@ -253,11 +259,16 @@
       font-style: italic;
     }
     @media (min-width: 980px) {
-      .sticky-pane {
+      .side-col {
         position: sticky;
         top: 16px;
-        max-height: calc(100vh - 24px);
-        overflow: auto;
+        max-height: calc(100vh - 32px);
+        overflow-y: auto;
+      }
+    }
+    @media (max-width: 979px) {
+      .app-layout {
+        grid-template-columns: 1fr;
       }
     }
     .sr-only {
@@ -291,108 +302,112 @@
       </div>
     </section>
 
-    <div class="grid">
-      <section class="panel" aria-labelledby="exam-controls-heading">
-        <h2 id="exam-controls-heading">Start or reset an exam</h2>
-        <fieldset>
-          <legend>Exam domains</legend>
-          <div class="domain-grid" id="domainFilters"></div>
-        </fieldset>
-        <div class="controls-row" style="margin-top: 14px;">
-          <div>
-            <label for="timerMinutes">Optional time limit (minutes)</label>
-            <input id="timerMinutes" type="number" min="1" step="1" inputmode="numeric" placeholder="Leave blank for no timer" />
+    <div class="app-layout">
+      <div class="main-col">
+        <section class="panel" aria-labelledby="exam-controls-heading">
+          <h2 id="exam-controls-heading">Start or reset an exam</h2>
+          <fieldset>
+            <legend>Exam domains</legend>
+            <div class="domain-grid" id="domainFilters"></div>
+          </fieldset>
+          <div class="controls-row" style="margin-top: 14px;">
+            <div>
+              <label for="timerMinutes">Optional time limit (minutes)</label>
+              <input id="timerMinutes" type="number" min="1" step="1" inputmode="numeric" placeholder="Leave blank for no timer" />
+            </div>
           </div>
-        </div>
-        <div class="button-row">
-          <button id="generateButton" type="button">Generate 50 built-in questions</button>
-          <button id="submitButton" type="button" class="secondary" disabled>Submit exam</button>
-          <button id="toggleAnswersButton" type="button" class="ghost" disabled>Show all answers</button>
-          <button id="clearRevealButton" type="button" class="ghost" disabled>Clear answer reveals</button>
-        </div>
-        <div class="button-row" style="margin-top:4px;">
-          <button id="exportConfigButton" type="button" class="ghost">Export configuration</button>
-          <button id="importConfigButton" type="button" class="ghost">Import configuration</button>
-          <input id="importConfigFileInput" type="file" accept="application/json,.json" style="display:none;" aria-hidden="true" />
-        </div>
-        <p class="help" id="examStatus" aria-live="polite">No exam generated yet.</p>
-      </section>
+          <div class="button-row">
+            <button id="generateButton" type="button">Generate 50 built-in questions</button>
+            <button id="submitButton" type="button" class="secondary" disabled>Submit exam</button>
+            <button id="toggleAnswersButton" type="button" class="ghost" disabled>Show all answers</button>
+            <button id="clearRevealButton" type="button" class="ghost" disabled>Clear answer reveals</button>
+          </div>
+          <div class="button-row" style="margin-top:4px;">
+            <button id="exportConfigButton" type="button" class="ghost">Export configuration</button>
+            <button id="importConfigButton" type="button" class="ghost">Import configuration</button>
+            <input id="importConfigFileInput" type="file" accept="application/json,.json" style="display:none;" aria-hidden="true" />
+          </div>
+          <p class="help" id="examStatus" aria-live="polite">No exam generated yet.</p>
+        </section>
 
-      <section class="panel sticky-pane" aria-labelledby="openai-heading">
-        <h2 id="openai-heading">Generate AI exam</h2>
-        <p class="help">Use your own API key to generate a fresh AI exam client-side (requests 70 and displays up to 50 valid questions). <strong>Generating replaces the current exam.</strong> Your API key and selected model are saved in browser local storage for convenience.</p>
-        <div class="controls-row">
-          <div>
-            <label for="openaiKey">OpenAI API key</label>
-            <input id="openaiKey" type="password" autocomplete="off" spellcheck="false" placeholder="sk-... (no quotes or spaces)" />
+        <section id="historyPanel" class="panel" aria-labelledby="history-heading" hidden>
+          <h2 id="history-heading">Saved exam history</h2>
+          <p class="help">Select a previously generated set to reload it. History is saved in browser local storage (most recent 25 sets kept). Loading a saved set resets all current answer selections.</p>
+          <div class="controls-row">
+            <div style="flex:1;min-width:0;">
+              <label for="historySelect">Saved sets (most recent first)</label>
+              <select id="historySelect" style="max-width:none;width:100%;"></select>
+            </div>
           </div>
-          <div>
-            <label for="openaiModel">Model</label>
-            <select id="openaiModel">
-              <option value="gpt-4.1-mini" selected>gpt-4.1-mini — default (cost/quality balance)</option>
-              <option value="gpt-4.1">gpt-4.1 — compatibility</option>
-              <option value="gpt-4o-mini">gpt-4o-mini — fast/low-cost</option>
-              <option value="gpt-4o">gpt-4o — advanced reasoning</option>
-              <option value="gpt-5.4-nano">gpt-5.4-nano — lightweight frontier</option>
-              <option value="gpt-5.4-mini">gpt-5.4-mini — efficient frontier</option>
-              <option value="gpt-5.4">gpt-5.4 — advanced frontier</option>
-              <option value="gpt-5.5">gpt-5.5 — flagship frontier</option>
-            </select>
+          <div class="button-row">
+            <button id="loadHistoryButton" type="button" class="secondary">Load selected set</button>
+            <button id="clearHistoryButton" type="button" class="ghost">Clear all history</button>
           </div>
-        </div>
-        <div class="button-row">
-          <button id="refreshModelsButton" type="button" class="ghost">Refresh available models from API key</button>
-          <button id="forgetApiKeyButton" type="button" class="ghost">Forget saved API key</button>
-        </div>
-        <p id="modelStatus" class="help" aria-live="polite"></p>
-        <div class="button-row">
-          <button id="generateAIButton" type="button" class="secondary">Generate AI exam (70→50)</button>
-        </div>
-        <p class="small-note">AI generation is tuned for product-specific Cohesity Architect Expert questions with plausible Cohesity-adjacent distractors. Generated sets are saved in browser memory and do not modify the built-in bank.</p>
-        <div class="lookup-section" aria-labelledby="lookup-heading">
-          <h3 id="lookup-heading" style="margin:0 0 8px 0;">Ad hoc LLM lookup</h3>
-          <p class="help">Study assistance only: verify exam-critical facts against official Cohesity documentation.</p>
-          <label for="adhocLookupQuery">Lookup question</label>
-          <textarea id="adhocLookupQuery" class="lookup-query" placeholder="Ask about a Cohesity architecture, design, security, integration, or troubleshooting concept..."></textarea>
-          <div class="button-row" style="margin-top:8px;">
-            <button id="adhocLookupButton" type="button" class="ghost">Ask LLM</button>
+        </section>
+
+        <section id="statsPanel" class="panel" aria-labelledby="stats-heading">
+          <h2 id="stats-heading">Question bank &amp; memory stats</h2>
+          <p class="help">AI-generated questions replace the current exam and are saved in browser memory. They do not modify the built-in question bank.</p>
+          <div id="statsContent" class="stats-grid"></div>
+        </section>
+
+        <section id="summary" class="summary" aria-live="polite"></section>
+
+        <section aria-labelledby="question-list-heading">
+          <h2 id="question-list-heading">Practice questions</h2>
+          <div id="questionList" class="question-list">
+            <div class="empty-state">Choose your domains, optionally set a timer, and generate an exam to begin.</div>
           </div>
-          <p id="adhocLookupStatus" class="help" aria-live="polite"></p>
-          <div id="adhocLookupResponse" class="lookup-response empty" role="region" aria-live="polite" aria-label="LLM lookup response">Response will appear here.</div>
-        </div>
-        <div class="warning">⚠️ <strong>Security notice:</strong> Your API key is stored in browser local storage. This is convenient but less secure on shared or public machines. Use <strong>Forget saved API key</strong> to remove it when done. Browser-side API calls also expose the key to this page context.</div>
-      </section>
+        </section>
+      </div>
+
+      <aside class="side-col">
+        <section class="panel" aria-labelledby="openai-heading">
+          <h2 id="openai-heading">Generate AI exam</h2>
+          <p class="help">Use your own API key to generate a fresh AI exam client-side (requests 70 and displays up to 50 valid questions). <strong>Generating replaces the current exam.</strong> Your API key and selected model are saved in browser local storage for convenience.</p>
+          <div class="controls-row">
+            <div>
+              <label for="openaiKey">OpenAI API key</label>
+              <input id="openaiKey" type="password" autocomplete="off" spellcheck="false" placeholder="sk-... (no quotes or spaces)" />
+            </div>
+            <div>
+              <label for="openaiModel">Model</label>
+              <select id="openaiModel">
+                <option value="gpt-4.1-mini" selected>gpt-4.1-mini — default (cost/quality balance)</option>
+                <option value="gpt-4.1">gpt-4.1 — compatibility</option>
+                <option value="gpt-4o-mini">gpt-4o-mini — fast/low-cost</option>
+                <option value="gpt-4o">gpt-4o — advanced reasoning</option>
+                <option value="gpt-5.4-nano">gpt-5.4-nano — lightweight frontier</option>
+                <option value="gpt-5.4-mini">gpt-5.4-mini — efficient frontier</option>
+                <option value="gpt-5.4">gpt-5.4 — advanced frontier</option>
+                <option value="gpt-5.5">gpt-5.5 — flagship frontier</option>
+              </select>
+            </div>
+          </div>
+          <div class="button-row">
+            <button id="refreshModelsButton" type="button" class="ghost">Refresh available models from API key</button>
+            <button id="forgetApiKeyButton" type="button" class="ghost">Forget saved API key</button>
+          </div>
+          <p id="modelStatus" class="help" aria-live="polite"></p>
+          <div class="button-row">
+            <button id="generateAIButton" type="button" class="secondary">Generate AI exam (70→50)</button>
+          </div>
+          <p class="small-note">AI generation is tuned for product-specific Cohesity Architect Expert questions with plausible Cohesity-adjacent distractors. Generated sets are saved in browser memory and do not modify the built-in bank.</p>
+          <div class="lookup-section" aria-labelledby="lookup-heading">
+            <h3 id="lookup-heading" style="margin:0 0 8px 0;">Ad hoc LLM lookup</h3>
+            <p class="help">Study assistance only: verify exam-critical facts against official Cohesity documentation.</p>
+            <label for="adhocLookupQuery">Lookup question</label>
+            <textarea id="adhocLookupQuery" class="lookup-query" placeholder="Ask about a Cohesity architecture, design, security, integration, or troubleshooting concept..."></textarea>
+            <div class="button-row" style="margin-top:8px;">
+              <button id="adhocLookupButton" type="button" class="ghost">Ask LLM</button>
+            </div>
+            <p id="adhocLookupStatus" class="help" aria-live="polite"></p>
+            <div id="adhocLookupResponse" class="lookup-response empty" role="region" aria-live="polite" aria-label="LLM lookup response">Response will appear here.</div>
+          </div>
+          <div class="warning">⚠️ <strong>Security notice:</strong> Your API key is stored in browser local storage. This is convenient but less secure on shared or public machines. Use <strong>Forget saved API key</strong> to remove it when done. Browser-side API calls also expose the key to this page context.</div>
+        </section>
+      </aside>
     </div>
-
-    <section id="historyPanel" class="panel" aria-labelledby="history-heading" style="margin-top:16px;" hidden>
-      <h2 id="history-heading">Saved exam history</h2>
-      <p class="help">Select a previously generated set to reload it. History is saved in browser local storage (most recent 25 sets kept). Loading a saved set resets all current answer selections.</p>
-      <div class="controls-row">
-        <div style="flex:1;min-width:0;">
-          <label for="historySelect">Saved sets (most recent first)</label>
-          <select id="historySelect" style="max-width:none;width:100%;"></select>
-        </div>
-      </div>
-      <div class="button-row">
-        <button id="loadHistoryButton" type="button" class="secondary">Load selected set</button>
-        <button id="clearHistoryButton" type="button" class="ghost">Clear all history</button>
-      </div>
-    </section>
-
-    <section id="statsPanel" class="panel" aria-labelledby="stats-heading" style="margin-top:16px;">
-      <h2 id="stats-heading">Question bank &amp; memory stats</h2>
-      <p class="help">AI-generated questions replace the current exam and are saved in browser memory. They do not modify the built-in question bank.</p>
-      <div id="statsContent" class="stats-grid"></div>
-    </section>
-
-    <section id="summary" class="summary" aria-live="polite"></section>
-
-    <section aria-labelledby="question-list-heading" style="margin-top: 20px;">
-      <h2 id="question-list-heading">Practice questions</h2>
-      <div id="questionList" class="question-list">
-        <div class="empty-state">Choose your domains, optionally set a timer, and generate an exam to begin.</div>
-      </div>
-    </section>
   </div>
 
   <script>
