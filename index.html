@@ -255,7 +255,7 @@
         <div class="controls-row">
           <div>
             <label for="openaiKey">OpenAI API key</label>
-            <input id="openaiKey" type="password" autocomplete="off" spellcheck="false" placeholder="sk-... (paste raw key only, no quotes or spaces)" />
+            <input id="openaiKey" type="password" autocomplete="off" spellcheck="false" placeholder="sk-... (no quotes or spaces)" />
           </div>
           <div>
             <label for="openaiModel">Model</label>
@@ -1550,9 +1550,15 @@ window.COHESITY_QUESTION_BANK =
     function sanitizeApiKey(raw) {
       if (typeof raw !== 'string') return '';
       let key = raw;
-      // Remove zero-width and other invisible Unicode characters
-      // U+200B zero-width space, U+200C/D non-joiners, U+FEFF BOM/ZWNBSP, U+00AD soft-hyphen, etc.
-      key = key.replace(/[\u00AD\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF\u00A0]/g, '');
+      // Remove invisible and formatting-only Unicode characters that can be
+      // introduced by copy-paste:
+      //   U+00AD  soft hyphen
+      //   U+00A0  non-breaking space
+      //   U+200B–U+200F  zero-width space, non-joiners, LTR/RTL marks
+      //   U+202A–U+202E  bidirectional formatting controls (LRE, RLE, PDF…)
+      //   U+2060–U+206F  word joiner, invisible operators, inhibit-swap, etc.
+      //   U+FEFF  BOM / zero-width no-break space
+      key = key.replace(/[\u00AD\u00A0\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/g, '');
       // Trim all leading/trailing whitespace including newlines
       key = key.trim();
       // Remove wrapping quotes or backticks (single, double, curly, backtick)
@@ -1567,10 +1573,12 @@ window.COHESITY_QUESTION_BANK =
     /**
      * Returns true if the key string contains only characters that are safe for
      * HTTP header values (printable ASCII 0x21–0x7E, excluding DEL 0x7F).
-     * Also does a basic length sanity check.
+     * Minimum length of 10 is a basic sanity check to reject obviously empty/short values.
      */
+    // Minimum character count to consider a key non-trivially short.
+    const MIN_API_KEY_LENGTH = 10;
     function isHeaderSafeApiKey(key) {
-      if (!key || key.length < 10) return false;
+      if (!key || key.length < MIN_API_KEY_LENGTH) return false;
       // HTTP headers must contain only printable ASCII (0x21-0x7E)
       return /^[\x21-\x7E]+$/.test(key);
     }
@@ -1627,7 +1635,7 @@ window.COHESITY_QUESTION_BANK =
         return null;
       }
       if (!isHeaderSafeApiKey(sanitized)) {
-        statusEl.textContent = 'The saved API key contains hidden or unsupported characters. Paste only the raw OpenAI key (for example sk-...). Use "Forget saved API key" and paste it again.';
+        statusEl.textContent = 'The API key contained hidden or unsupported characters and has been cleared. Paste only the raw OpenAI key (for example sk-...). Use "Forget saved API key" and paste it again.';
         lsRemove(LS_API_KEY);
         openaiKeyInput.value = '';
         return null;
@@ -2152,6 +2160,8 @@ window.COHESITY_QUESTION_BANK =
     async function loadModelsFromAPI() {
       const apiKey = getValidatedApiKey(modelStatus);
       if (!apiKey) {
+        // getValidatedApiKey sets its own error message when the key is invalid.
+        // Only show the default prompt when no message was set (empty key case).
         if (!modelStatus.textContent) modelStatus.textContent = 'Enter your API key first, then click Refresh to load available models.';
         return;
       }
