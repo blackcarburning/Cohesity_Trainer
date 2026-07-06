@@ -1486,7 +1486,11 @@ window.COHESITY_QUESTION_BANK =
     }
 
     function isChatCapableModel(id) {
-      if (!id.startsWith('gpt-')) return false;
+      // Accept gpt-* and o-series reasoning models (o1, o3, o4…) supported by Chat Completions.
+      // Future model families can be added to this prefix list.
+      const chatPrefixes = ['gpt-', 'o1', 'o3', 'o4'];
+      if (!chatPrefixes.some(p => id.startsWith(p))) return false;
+      // Exclude variants that use specialised non-chat endpoints only.
       const excluded = ['-instruct', '-audio', '-realtime', '-tts', '-embedding', '-transcribe', '-search'];
       return !excluded.some(e => id.includes(e));
     }
