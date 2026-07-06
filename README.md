@@ -33,6 +33,8 @@ Open `index.html` in a browser to use the Cohesity Certified Architect Expert pr
 - Your OpenAI API key and selected model are saved in browser local storage so they persist across page reloads.
 - ⚠️ **Security warning:** Storing your API key in local storage is convenient but less secure on shared or public machines. Anyone with access to DevTools on the same machine/browser profile can read it. Use the **Forget saved API key** button to remove it when done, especially on shared devices.
 - The **Forget saved API key** button clears the key from local storage and from the input field immediately.
+- API keys are **sanitized before use and before saving**: leading/trailing whitespace, wrapping quotes, hidden zero-width characters, and internal newlines are stripped automatically. The sanitized value is saved back to local storage.
+- If a saved key contains characters outside the HTTP header-safe ASCII range (e.g. hidden Unicode), it is rejected on page load with a warning and cleared from local storage automatically.
 - No real API key is ever hard-coded in the source.
 
 ### Export configuration
@@ -62,3 +64,16 @@ Open `index.html` in a browser to use the Cohesity Certified Architect Expert pr
 - Official Cohesity documentation, developer, or product citations are included where practical. Otherwise the citation is labeled `Cohesity certification overview / study topic`.
 - Browser-side API use exposes the key to the page context, so avoid shared/public machines or use **Forget saved API key** when done.
 - Frontier model IDs (`gpt-5.x`) reflect current OpenAI naming at time of writing. Use the **Refresh available models** button to load the exact IDs available on your key.
+
+## Troubleshooting
+
+### Built-in generation does nothing
+- Open **DevTools → Console** (F12) and reload the page. Look for any error messages or the startup health status.
+- If the status bar at the bottom of the controls panel shows a `⚠️ App health issue(s)` message, follow the instructions there.
+- The status bar should show the number of loaded built-in questions (e.g. `Ready with 73 built-in questions`). If it shows 0, the question bank failed to load — check the console for validation errors.
+
+### OpenAI generation reports a fetch header ISO-8859-1 error
+- This error means the API key stored or pasted contains a hidden character (newline, zero-width space, curly quote, or similar) that HTTP headers do not allow.
+- **Fix:** Click **Forget saved API key**, then paste only the raw key from the OpenAI dashboard — no surrounding quotes, no leading/trailing spaces or newlines.
+- The app now sanitizes API keys automatically: whitespace, quotes, and invisible Unicode characters are stripped before the key is used in any fetch request. If the sanitized key still contains unsupported characters, you will see a clear error message instead of the browser-level ISO-8859-1 exception.
+- If the problem persists, clear site data for the page in DevTools (Application → Storage → Clear site data) and re-enter the key.
