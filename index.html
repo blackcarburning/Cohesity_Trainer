@@ -304,6 +304,8 @@
         </div>
         <div class="button-row" style="margin-top:4px;">
           <button id="exportConfigButton" type="button" class="ghost">Export configuration</button>
+          <button id="importConfigButton" type="button" class="ghost">Import configuration</button>
+          <input id="importConfigFileInput" type="file" accept="application/json,.json" style="display:none;" aria-hidden="true" />
         </div>
         <p class="help" id="examStatus" aria-live="polite">No exam generated yet.</p>
       </section>
@@ -1588,6 +1590,8 @@ window.COHESITY_QUESTION_BANK =
     const toggleAnswersButton = document.getElementById('toggleAnswersButton');
     const clearRevealButton = document.getElementById('clearRevealButton');
     const exportConfigButton = document.getElementById('exportConfigButton');
+    const importConfigButton = document.getElementById('importConfigButton');
+    const importConfigFileInput = document.getElementById('importConfigFileInput');
     const generateAIButton = document.getElementById('generateAIButton');
     const refreshModelsButton = document.getElementById('refreshModelsButton');
     const forgetApiKeyButton = document.getElementById('forgetApiKeyButton');
@@ -1755,6 +1759,7 @@ window.COHESITY_QUESTION_BANK =
         'Each question must include either correctAnswerIndex (single-answer, 4 choices) or correctAnswerIndexes (multi-select).',
         'Multi-select questions must use ONLY these two patterns: exactly 4 choices with 2 correct answers (correctAnswerIndexes length 2), OR exactly 5 choices with 3 correct answers (correctAnswerIndexes length 3). No other multi-select patterns are accepted.',
         `IMPORTANT: Include NO MORE THAN ${MAX_MULTI_IN_OPENAI_REQUEST} multi-select questions out of the ${OPENAI_REQUEST_QUESTION_COUNT} total. This helps the displayed ${DISPLAY_EXAM_QUESTION_COUNT}-question exam stay near the normal cap of at most ${MAX_MULTI_PER_EXAM} multi-select questions.`,
+        `Include approximately 7 of the ${OPENAI_REQUEST_QUESTION_COUNT} questions (about 10%) that test technical implementation details from official Cohesity documentation, such as SpanFS/filesystem behaviour, supported commands or UI/Siren health-check workflows, Cohesity services/components (for example iris, magneto, bridge, nexus, athena), their purpose, important states/values, and troubleshooting or capacity/performance signals. Keep these questions architect-relevant and avoid unsupported command trivia. Use official Cohesity documentation references for citationTitle/citationUrl where available; otherwise use citationTopic: "Cohesity certification overview / study topic".`,
         formatPromptSection('Question scope topics to cover across the set', EXAM_SCOPE_TOPICS),
         formatPromptSection('Technical depth rules', QUESTION_TECHNICAL_DEPTH_RULES),
         formatPromptSection('Distractor quality rules', DISTRACTOR_QUALITY_RULES),
@@ -2187,6 +2192,134 @@ window.COHESITY_QUESTION_BANK =
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+    }
+
+    // ── Import configuration ─────────────────────────────────────────────────
+    function importConfig() {
+      // Reset so the same file can be selected again if needed
+      importConfigFileInput.value = '';
+      importConfigFileInput.click();
+    }
+
+    function handleImportFile(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        let parsed;
+        try {
+          parsed = JSON.parse(e.target.result);
+        } catch {
+          examStatus.textContent = 'Import failed: the selected file does not contain valid JSON.';
+          return;
+        }
+
+        if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+          examStatus.textContent = 'Import failed: the file does not contain a valid configuration object.';
+          return;
+        }
+
+        // Verify this is a file produced by this app
+        if (typeof parsed.schemaVersion !== 'number') {
+          examStatus.textContent = 'Import failed: unrecognised file format (missing schemaVersion). Only files exported by this app are supported.';
+          return;
+        }
+
+        const sets = Array.isArray(parsed.savedQuestionSets) ? parsed.savedQuestionSets : [];
+        if (!sets.length) {
+          examStatus.textContent = 'Import: no saved question sets found in this file. Nothing was imported.';
+          return;
+        }
+
+        const existingHistory = loadHistory();
+        const existingIds = new Set(existingHistory.map(e => e.id).filter(Boolean));
+
+        let importedCount = 0;
+        let skippedDuplicateCount = 0;
+        let skippedInvalidCount = 0;
+        let importedQuestionCount = 0;
+        const toAdd = [];
+
+        for (const set of sets) {
+          // De-duplicate by id
+          if (set.id && existingIds.has(set.id)) {
+            skippedDuplicateCount += 1;
+            continue;
+          }
+
+          // Must have a non-empty questions array
+          if (!Array.isArray(set.questions) || !set.questions.length) {
+            skippedInvalidCount += 1;
+            continue;
+          }
+
+          // Validate/normalize each question using the existing schema helper
+          const validQuestions = [];
+          set.questions.forEach((q, i) => {
+            try {
+              validQuestions.push(normalizeQuestion(q, `Imported question ${i + 1}`));
+            } catch {
+              // skip malformed question silently
+            }
+          });
+
+          if (!validQuestions.length) {
+            skippedInvalidCount += 1;
+            continue;
+          }
+
+          const entryId = (typeof set.id === 'string' && set.id.trim()) ? set.id : createHistoryId();
+          const entry = {
+            id: entryId,
+            generatedAt: (typeof set.generatedAt === 'string' && set.generatedAt) ? set.generatedAt : new Date().toISOString(),
+            source: (typeof set.source === 'string' && set.source.trim()) ? set.source : SOURCE_AI_GENERATED,
+            domains: Array.isArray(set.domains) ? set.domains : [],
+            model: (typeof set.model === 'string' && set.model.trim()) ? set.model : null,
+            questionCount: validQuestions.length,
+            questions: validQuestions,
+            metadata: (set.metadata && typeof set.metadata === 'object' && !Array.isArray(set.metadata)) ? set.metadata : null
+          };
+
+          toAdd.push(entry);
+          // Track this id to prevent importing the same set twice if it appears twice in the file
+          existingIds.add(entryId);
+          importedCount += 1;
+          importedQuestionCount += validQuestions.length;
+        }
+
+        if (!toAdd.length) {
+          if (skippedDuplicateCount && !skippedInvalidCount) {
+            examStatus.textContent = `Import: all ${skippedDuplicateCount} question set(s) in this file are already in your history. Nothing was imported.`;
+          } else if (skippedDuplicateCount) {
+            examStatus.textContent = `Import: no new sets were imported. ${skippedDuplicateCount} duplicate(s) and ${skippedInvalidCount} invalid set(s) were skipped.`;
+          } else {
+            examStatus.textContent = 'Import: no valid question sets found in the file. Nothing was imported.';
+          }
+          return;
+        }
+
+        // Prepend imported sets to existing history, respecting the history cap
+        const newHistory = [...toAdd, ...existingHistory];
+        if (newHistory.length > MAX_HISTORY) newHistory.splice(MAX_HISTORY);
+        sessionHistoryFallback = newHistory;
+        const saved = lsSet(LS_HISTORY, newHistory);
+
+        renderHistoryDropdown();
+        renderStatsPanel();
+
+        let msg = `Imported ${importedCount} question set(s) with ${importedQuestionCount} total questions.`;
+        if (skippedDuplicateCount) msg += ` ${skippedDuplicateCount} duplicate(s) skipped.`;
+        if (skippedInvalidCount) msg += ` ${skippedInvalidCount} invalid set(s) skipped.`;
+        if (!saved) msg += ` ${HISTORY_SAVE_WARNING}`;
+        examStatus.textContent = msg;
+      };
+
+      reader.onerror = function () {
+        examStatus.textContent = 'Import failed: could not read the file.';
+      };
+
+      reader.readAsText(file);
     }
 
     function createDomainControls() {
@@ -3024,6 +3157,8 @@ window.COHESITY_QUESTION_BANK =
       renderQuestions();
     });
     exportConfigButton.addEventListener('click', exportConfig);
+    importConfigButton.addEventListener('click', importConfig);
+    importConfigFileInput.addEventListener('change', handleImportFile);
     refreshModelsButton.addEventListener('click', loadModelsFromAPI);
     forgetApiKeyButton.addEventListener('click', forgetApiKey);
     generateAIButton.addEventListener('click', generateAIExam);
