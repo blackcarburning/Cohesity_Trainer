@@ -1803,7 +1803,7 @@ window.COHESITY_QUESTION_BANK =
     function stampExamInstanceIds(questions) {
       return questions.map((question, index) => ({
         ...question,
-        instanceId: `${question.id ?? 'q'}-${index + 1}-${Math.random().toString(36).slice(2, 8)}`
+        instanceId: `${typeof question.id === 'string' && question.id.trim() ? question.id : 'q'}-${index + 1}-${Math.random().toString(36).slice(2, 8)}`
       }));
     }
 
