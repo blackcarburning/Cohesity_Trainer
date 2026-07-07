@@ -101,14 +101,14 @@ const TOPIC_RULES = [
   { topic: 'oracle',                   patterns: [/\boracle\b/i, /\brman\b/i] },
   { topic: 'kubernetes',               patterns: [/kubernetes/i, /\bk8s\b/i, /\bhelm\b/i, /\bpod\b/i, /container/i] },
   { topic: 'microsoft-365',            patterns: [/microsoft.?365/i, /\bm365\b/i, /\bo365\b/i, /exchange.?online/i, /sharepoint/i, /onedrive/i, /teams/i] },
-  { topic: 'physical-servers',         patterns: [/physical.?server/i, /bare.?metal/i, /\bagent.*install|install.*agent/i] },
+  { topic: 'physical-servers',         patterns: [/physical.?server/i, /bare.?metal/i, /\bagent.*\binstall\b|\binstall\b.*agent/i] },
   { topic: 'agents',                   patterns: [/cohesity.?agent/i, /\bagent\b/i, /agent.?compat/i] },
   { topic: 'nosql-hadoop-service',     patterns: [/nosql/i, /hadoop/i, /\bhdfs\b/i, /cassandra/i, /mongodb/i, /couchbase/i, /hive/i] },
   { topic: 'monitoring',               patterns: [/monitor/i, /\bsnmp\b/i, /syslog/i, /\balert\b/i, /notification/i, /\bsiem\b/i] },
   { topic: 'performance-capacity',     patterns: [/performance/i, /capacity/i, /\bthroughput\b/i, /\biops\b/i, /sizing/i, /dedup/i, /compress/i] },
   { topic: 'troubleshooting',          patterns: [/troubleshoot/i, /diagnos/i, /\bdebug\b/i, /\blog.*collect|collect.*log/i, /support.?bundle/i] },
   { topic: 'implementation-detail',    patterns: [/\bcommand\b/i, /\bcli\b/i, /configure.*step|step.*configure/i, /procedure/i, /how.?to\b/i, /prerequisites/i] },
-  { topic: 'commands',                 patterns: [/\$ /i, /iris_cli/i, /cohesity_cli/i, /^\s{4,}[a-z_]+ [a-z_]/im] },
+  { topic: 'commands',                 patterns: [/\$ /i, /iris_cli/i, /cohesity_cli/i] },
   { topic: 'services',                 patterns: [/service.*start|stop|restart/i, /systemctl/i, /cluster.*service/i] },
 ];
 
@@ -408,7 +408,7 @@ function buildChunks(pages, maxChunkChars, overlapChars) {
     const page    = pages[pi];
     const pageText = page.lines.join('\n').trim();
 
-    // Initialise accumulator on first page
+    // Initialize accumulator on first page
     if (!acc) acc = newAcc(page, '');
 
     // Detect top-level chapter boundaries so we prefer to flush before them
