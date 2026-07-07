@@ -71,8 +71,8 @@ Guide-grounded mode uses the parsed guide as source-of-truth: the AI is explicit
 
 The status bar will confirm guide grounding during and after generation, for example:
 ```
-Generating 70 guide-grounded AI questions using 12 chunks from selected subjects: DataProtect, VMware, Nutanix (selected subjects: 3; candidate chunks after topic filtering: 148; chunks sent to the LLM: 12) — correct answers must be supported by the guide excerpts.
-Generated using Cohesity User Guide grounding from 12 chunks (selected subjects: DataProtect, VMware, Nutanix). Selected subjects: 3; candidate chunks after topic filtering: 148; chunks sent to the LLM: 12.
+Generating 70 guide-grounded AI questions using 12 chunks from selected subjects: DataProtect, VMware, Nutanix (candidates after topic filtering: 148; chunks sent to the LLM: 12) — correct answers must be supported by the guide excerpts.
+Generated using Cohesity User Guide grounding from 12 chunks (selected subjects: DataProtect, VMware, Nutanix). Candidates after topic filtering: 148; chunks sent to the LLM: 12.
 ```
 
 Guide-grounding metadata is saved in the AI history entry so you can tell which sets were generated with guide grounding.
