@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cohesity User Guide Parser</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #0f1117;
+    color: #e2e8f0;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+  }
+
+  .page-header {
+    background: linear-gradient(135deg, #1a1f2e 0%, #0d1626 100%);
+    border-bottom: 1px solid #2d3748;
+    padding: 24px 32px;
+  }
+
+  .page-header h1 {
+    margin: 0 0 6px 0;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #63b3ed;
+  }
+
+  .page-header p {
+    margin: 0;
+    color: #a0aec0;
+    font-size: 0.9rem;
+  }
+
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 28px 24px 48px;
+  }
+
+  .card {
+    background: #1a1f2e;
+    border: 1px solid #2d3748;
+    border-radius: 10px;
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+
+  .card h2 {
+    margin: 0 0 18px 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #90cdf4;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+
+  .field-row.single { grid-template-columns: 1fr; }
+  .field-row.triple { grid-template-columns: 1fr 1fr 1fr; }
+
+  label {
+    display: block;
+    font-size: 0.82rem;
+    color: #a0aec0;
+    margin-bottom: 5px;
+    font-weight: 500;
+  }
+
+  input[type="text"],
+  input[type="number"] {
+    width: 100%;
+    background: #0f1117;
+    border: 1px solid #3d4a5c;
+    border-radius: 6px;
+    padding: 8px 10px;
+    color: #e2e8f0;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  input[type="text"]:focus,
+  input[type="number"]:focus {
+    border-color: #63b3ed;
+  }
+
+  .file-input-wrapper {
+    position: relative;
+    display: block;
+  }
+
+  .file-input-drop {
+    border: 2px dashed #3d4a5c;
+    border-radius: 8px;
+    padding: 28px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+  }
+
+  .file-input-drop:hover,
+  .file-input-drop.drag-over {
+    border-color: #63b3ed;
+    background: rgba(99,179,237,0.05);
+  }
+
+  .file-input-drop .icon {
+    font-size: 2rem;
+    margin-bottom: 8px;
+  }
+
+  .file-input-drop p {
+    margin: 4px 0;
+    color: #a0aec0;
+    font-size: 0.88rem;
+  }
+
+  .file-input-drop .filename {
+    color: #63b3ed;
+    font-weight: 600;
+    margin-top: 8px;
+  }
+
+  input[type="file"] {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .toggle-row {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+  }
+
+  .toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 0.88rem;
+    color: #e2e8f0;
+  }
+
+  .toggle-label input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #63b3ed;
+    cursor: pointer;
+  }
+
+  .btn-parse {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, #3182ce, #2b6cb0);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 28px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+  }
+
+  .btn-parse:hover:not(:disabled) { opacity: 0.88; }
+  .btn-parse:active:not(:disabled) { transform: scale(0.98); }
+  .btn-parse:disabled { opacity: 0.45; cursor: not-allowed; }
+
+  .btn-download {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, #276749, #22543d);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 28px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    text-decoration: none;
+  }
+
+  .btn-download:hover { opacity: 0.88; }
+
+  .btn-row {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 4px;
+  }
+
+  /* Progress bar */
+  .progress-bar-track {
+    background: #0f1117;
+    border-radius: 6px;
+    height: 8px;
+    overflow: hidden;
+    margin: 14px 0 10px;
+    display: none;
+  }
+
+  .progress-bar-track.visible { display: block; }
+
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #3182ce, #63b3ed);
+    border-radius: 6px;
+    transition: width 0.2s ease;
+    width: 0%;
+  }
+
+  /* Status log */
+  #status-log {
+    background: #0f1117;
+    border: 1px solid #2d3748;
+    border-radius: 6px;
+    padding: 12px 14px;
+    font-family: "Fira Mono", "Cascadia Code", "Menlo", monospace;
+    font-size: 0.82rem;
+    color: #a0aec0;
+    height: 200px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    display: none;
+  }
+
+  #status-log.visible { display: block; }
+
+  .log-info  { color: #a0aec0; }
+  .log-ok    { color: #68d391; }
+  .log-warn  { color: #f6ad55; }
+  .log-error { color: #fc8181; }
+  .log-head  { color: #63b3ed; font-weight: bold; }
+
+  /* Stats grid */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 12px;
+    margin-top: 4px;
+  }
+
+  .stat-box {
+    background: #0f1117;
+    border: 1px solid #2d3748;
+    border-radius: 8px;
+    padding: 14px 16px;
+    text-align: center;
+  }
+
+  .stat-box .stat-num {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #63b3ed;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .stat-box .stat-label {
+    font-size: 0.78rem;
+    color: #718096;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  #stats-section { display: none; }
+  #stats-section.visible { display: block; }
+
+  .warning-banner {
+    background: rgba(246,173,85,0.12);
+    border: 1px solid #d69e2e;
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 0.85rem;
+    color: #f6ad55;
+    margin-top: 12px;
+    display: none;
+  }
+
+  .warning-banner.visible { display: block; }
+
+  .hint {
+    font-size: 0.78rem;
+    color: #718096;
+    margin-top: 6px;
+  }
+
+  @media (max-width: 600px) {
+    .field-row, .field-row.triple { grid-template-columns: 1fr; }
+    .page-header { padding: 18px 16px; }
+    .container { padding: 16px 12px 40px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>🗂 Cohesity User Guide Parser</h1>
+  <p>Select <code>74_UserGuide_extracted.md</code>, configure options, and download structured JSON &mdash; all in your browser. No Node.js or command line required.</p>
+</div>
+
+<div class="container">
+
+  <!-- FILE INPUT -->
+  <div class="card">
+    <h2>1. Select Input File</h2>
+    <div class="file-input-wrapper">
+      <div class="file-input-drop" id="drop-zone">
+        <div class="icon">📄</div>
+        <p>Click or drag &amp; drop <strong>74_UserGuide_extracted.md</strong> here</p>
+        <p class="hint">File is read locally &mdash; nothing is uploaded.</p>
+        <div class="filename" id="chosen-filename" style="display:none"></div>
+      </div>
+      <input type="file" id="file-input" accept=".md,text/markdown,text/plain">
+    </div>
+  </div>
+
+  <!-- OPTIONS -->
+  <div class="card">
+    <h2>2. Configure Options</h2>
+    <div class="field-row">
+      <div>
+        <label for="opt-output">Output filename</label>
+        <input type="text" id="opt-output" value="cohesity-user-guide-knowledge.json">
+      </div>
+      <div>
+        <label for="opt-max-chunk">Max chunk chars</label>
+        <input type="number" id="opt-max-chunk" value="6000" min="500" max="50000" step="100">
+      </div>
+    </div>
+    <div class="field-row">
+      <div>
+        <label for="opt-overlap">Overlap chars</label>
+        <input type="number" id="opt-overlap" value="600" min="0" max="5000" step="50">
+      </div>
+      <div></div>
+    </div>
+    <div class="toggle-row">
+      <label class="toggle-label">
+        <input type="checkbox" id="opt-pretty" checked>
+        Pretty-print JSON (larger file, human-readable)
+      </label>
+      <label class="toggle-label">
+        <input type="checkbox" id="opt-index">
+        Include inverted keyword index
+      </label>
+    </div>
+  </div>
+
+  <!-- PARSE BUTTON + PROGRESS -->
+  <div class="card">
+    <h2>3. Parse &amp; Download</h2>
+    <div class="btn-row">
+      <button class="btn-parse" id="btn-parse" disabled>
+        ⚙️ Parse &amp; Generate JSON
+      </button>
+      <a class="btn-download" id="btn-download" style="display:none">
+        ⬇️ Download JSON
+      </a>
+    </div>
+
+    <div class="progress-bar-track" id="progress-track">
+      <div class="progress-bar-fill" id="progress-fill"></div>
+    </div>
+
+    <div class="warning-banner" id="size-warning"></div>
+
+    <div id="status-log"></div>
+  </div>
+
+  <!-- STATS -->
+  <div class="card" id="stats-section">
+    <h2>4. Summary Statistics</h2>
+    <div class="stats-grid" id="stats-grid"></div>
+  </div>
+
+</div>
+
+<script>
+'use strict';
+
+// ─── Utilities ────────────────────────────────────────────────────────────────
+
+async function yieldToBrowser() {
+  await new Promise(r => requestAnimationFrame(r));
+}
+
+function fmt(n) {
+  return typeof n === 'number' ? n.toLocaleString() : String(n);
+}
+
+// ─── Status log ──────────────────────────────────────────────────────────────
+
+const logEl   = document.getElementById('status-log');
+const trackEl = document.getElementById('progress-track');
+const fillEl  = document.getElementById('progress-fill');
+
+function showLog() {
+  logEl.classList.add('visible');
+  trackEl.classList.add('visible');
+}
+
+function log(msg, cls = 'log-info') {
+  const span = document.createElement('span');
+  span.className = cls;
+  span.textContent = msg + '\n';
+  logEl.appendChild(span);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+function logHead(msg) { log(msg, 'log-head'); }
+function logOk(msg)   { log(msg, 'log-ok'); }
+function logWarn(msg) { log(msg, 'log-warn'); }
+function logErr(msg)  { log(msg, 'log-error'); }
+
+function setProgress(pct) {
+  fillEl.style.width = Math.min(100, Math.max(0, pct)) + '%';
+}
+
+// ─── Topic rules ─────────────────────────────────────────────────────────────
+
+const TOPIC_RULES = [
+  { topic: 'supportability',           patterns: [/supportab/i, /compatibility/i, /supported (software|workflow|platform)/i] },
+  { topic: 'cluster-architecture',     patterns: [/cluster architect/i, /spanfs/i, /scale.?out/i, /fault tolerance/i, /SnapTree/i, /storage domain/i] },
+  { topic: 'spanfs',                   patterns: [/spanfs/i, /filesystem/i, /snaptree/i, /chunk store/i] },
+  { topic: 'cluster-administration',   patterns: [/cluster admin/i, /cluster setup/i, /cluster config/i, /node.*manage/i, /manage.*node/i, /power off/i, /power on/i] },
+  { topic: 'cluster-services',         patterns: [/cluster service/i, /\biris\b/i, /\bmagneto\b/i, /\bbridge\b/i, /\bnexus\b/i, /\bathena\b/i, /\bgandalf\b/i, /cohesity service/i] },
+  { topic: 'health-checks',            patterns: [/health.?check/i, /siren/i, /cluster health/i, /preflight/i, /\balert\b/i] },
+  { topic: 'cli',                      patterns: [/\bcli\b/i, /command.?line/i, /iris_cli/i, /cohesity_cli/i] },
+  { topic: 'ssh',                      patterns: [/\bssh\b/i, /secure shell/i, /\bsshd/i] },
+  { topic: 'rest-api',                 patterns: [/rest api/i, /\bapi\b.*endpoint/i, /swagger/i, /openapi/i] },
+  { topic: 'networking',               patterns: [/network/i, /vlan/i, /\bip\b/i, /\bdns\b/i, /\bntp\b/i, /\bmtu\b/i, /\bsubnet/i] },
+  { topic: 'firewall-ports',           patterns: [/firewall/i, /\bport\b/i, /tcp.*udp|udp.*tcp/i] },
+  { topic: 'access-management',        patterns: [/access management/i, /user.*manage/i, /manage.*user/i, /\brbac\b/i, /role.*based/i] },
+  { topic: 'mfa-sso-rbac',             patterns: [/\bmfa\b/i, /multi.?factor/i, /\bsso\b/i, /single.?sign.?on/i, /\brbac\b/i, /saml/i, /\boauth\b/i] },
+  { topic: 'datalock',                 patterns: [/datalock/i, /worm/i, /immutab/i, /compliance.*lock/i] },
+  { topic: 'security',                 patterns: [/security/i, /encrypt/i, /cyber/i, /threat/i, /anomaly/i, /ransomware/i, /hardening/i] },
+  { topic: 'fortknox',                 patterns: [/fortknox/i, /fort.?knox/i, /cyber.?vault/i, /vault/i] },
+  { topic: 'organizations-multitenancy', patterns: [/organization/i, /multitenancy/i, /multi.?tenant/i, /tenant/i] },
+  { topic: 'dataprotect',              patterns: [/dataprotect/i, /data.?protect/i, /protection policy/i, /\bprotect\b/i, /\bbackup\b/i, /\brestore\b/i, /recovery/i] },
+  { topic: 'smartfiles',               patterns: [/smartfiles/i, /smart.?files/i] },
+  { topic: 'views',                    patterns: [/\bview\b/i, /\bshare\b/i, /file.?service/i] },
+  { topic: 'smb',                      patterns: [/\bsmb\b/i, /cifs/i, /windows.?share/i] },
+  { topic: 'nfs',                      patterns: [/\bnfs\b/i, /network.?file.?system/i] },
+  { topic: 's3',                       patterns: [/\bs3\b/i, /object.?store/i, /\bbucket/i] },
+  { topic: 'cloudarchive',             patterns: [/cloudarchive/i, /cloud.*archiv/i, /archiv.*cloud/i] },
+  { topic: 'cloudtier',                patterns: [/cloudtier/i, /cloud.*tier/i, /tier.*cloud/i] },
+  { topic: 'replication',              patterns: [/\breplication\b/i, /replicate/i] },
+  { topic: 'cloud-services',           patterns: [/cloud.?service/i, /helios/i] },
+  { topic: 'aws',                      patterns: [/\baws\b/i, /amazon.?web/i, /\bec2\b/i, /\bs3\b.*aws|aws.*\bs3\b/i] },
+  { topic: 'azure',                    patterns: [/\bazure\b/i, /microsoft.*cloud/i] },
+  { topic: 'gcp',                      patterns: [/\bgcp\b/i, /google.?cloud/i] },
+  { topic: 'vmware',                   patterns: [/vmware/i, /\bvsphere\b/i, /\bvcenter\b/i, /\besxi\b/i, /\bvms\b/i, /virtual.?machine/i] },
+  { topic: 'nutanix',                  patterns: [/nutanix/i, /\bahv\b/i, /acropolis/i, /prism/i] },
+  { topic: 'hyper-v',                  patterns: [/hyper.?v/i, /\bscvmm\b/i] },
+  { topic: 'nas',                      patterns: [/\bnas\b/i, /network.?attached/i, /\bnetapp/i, /\bisilon/i, /\bpure\b.*storage|storage.*\bpure\b/i] },
+  { topic: 'databases',                patterns: [/\bdatabase/i, /\bdb\b/i] },
+  { topic: 'sql-server',               patterns: [/sql.?server/i, /\bmssql\b/i, /\bms.?sql\b/i] },
+  { topic: 'oracle',                   patterns: [/\boracle\b/i, /\brman\b/i] },
+  { topic: 'kubernetes',               patterns: [/kubernetes/i, /\bk8s\b/i, /\bhelm\b/i, /\bpod\b/i, /container/i] },
+  { topic: 'microsoft-365',            patterns: [/microsoft.?365/i, /\bm365\b/i, /\bo365\b/i, /exchange.?online/i, /sharepoint/i, /onedrive/i, /teams/i] },
+  { topic: 'physical-servers',         patterns: [/physical.?server/i, /bare.?metal/i, /\bagent.*\binstall\b|\binstall\b.*agent/i] },
+  { topic: 'agents',                   patterns: [/cohesity.?agent/i, /\bagent\b/i, /agent.?compat/i] },
+  { topic: 'nosql-hadoop-service',     patterns: [/nosql/i, /hadoop/i, /\bhdfs\b/i, /cassandra/i, /mongodb/i, /couchbase/i, /hive/i] },
+  { topic: 'monitoring',               patterns: [/monitor/i, /\bsnmp\b/i, /syslog/i, /\balert\b/i, /notification/i, /\bsiem\b/i] },
+  { topic: 'performance-capacity',     patterns: [/performance/i, /capacity/i, /\bthroughput\b/i, /\biops\b/i, /sizing/i, /dedup/i, /compress/i] },
+  { topic: 'troubleshooting',          patterns: [/troubleshoot/i, /diagnos/i, /\bdebug\b/i, /\blog.*collect|collect.*log/i, /support.?bundle/i] },
+  { topic: 'implementation-detail',    patterns: [/\bcommand\b/i, /\bcli\b/i, /configure.*step|step.*configure/i, /procedure/i, /how.?to\b/i, /prerequisites/i] },
+  { topic: 'commands',                 patterns: [/\$ /i, /iris_cli/i, /cohesity_cli/i] },
+  { topic: 'services',                 patterns: [/service.*start|stop|restart/i, /systemctl/i, /cluster.*service/i] },
+];
+
+function classifyTopics(text, headingPath) {
+  const combined = [text, ...headingPath].join(' ');
+  const found = new Set();
+  for (const { topic, patterns } of TOPIC_RULES) {
+    for (const pat of patterns) {
+      if (pat.test(combined)) { found.add(topic); break; }
+    }
+  }
+  return Array.from(found);
+}
+
+// ─── Question target classification ──────────────────────────────────────────
+
+function classifyQuestionTargets(topics, text) {
+  const t = new Set(topics);
+  const targets = new Set();
+  if (['cluster-architecture','spanfs'].some(x => t.has(x)))                                              targets.add('architecture');
+  if (['cluster-administration','networking','firewall-ports','access-management','cluster-services'].some(x => t.has(x))) targets.add('design');
+  if (['implementation-detail','commands','cli','ssh','services'].some(x => t.has(x)))                    targets.add('implementation-detail');
+  if (['troubleshooting','health-checks','monitoring'].some(x => t.has(x)))                               targets.add('troubleshooting');
+  if (t.has('supportability'))                                                                             targets.add('supportability');
+  if (['security','mfa-sso-rbac','datalock','fortknox'].some(x => t.has(x)))                              targets.add('security');
+  if (['cluster-administration','performance-capacity','monitoring'].some(x => t.has(x)))                 targets.add('operations');
+  if (['dataprotect','cloudarchive','cloudtier','replication','vmware','nutanix','databases','kubernetes','physical-servers','microsoft-365'].some(x => t.has(x))) targets.add('workload-protection');
+  return Array.from(targets);
+}
+
+// ─── Difficulty signals ───────────────────────────────────────────────────────
+
+function computeDifficultySignals(text) {
+  const signals = [];
+  if (/\b(limit|maximum|minimum|threshold|capacity)\b/i.test(text)) signals.push('has-limits-or-values');
+  if (/\bwarn(ing)?\b|\bnote\b|\bcaution\b|\bimportant\b/i.test(text)) signals.push('has-warnings-or-notes');
+  if (/\$ |iris_cli|cohesity_cli|^\s{4}/m.test(text))                 signals.push('has-command');
+  if (/\|.*\|/m.test(text))                                            signals.push('has-table');
+  if (/^\d+\.\s|^[-*•]\s/m.test(text))                                signals.push('has-procedure');
+  return signals;
+}
+
+// ─── Keyword extraction ───────────────────────────────────────────────────────
+
+const IMPORTANT_TERMS = new Set([
+  'spanfs','snaptree','iris','magneto','bridge','nexus','athena','gandalf',
+  'helios','dataprotect','smartfiles','fortknox','cloudarchive','cloudtier',
+  'datalock','worm','rbac','mfa','sso','saml','scvmm','ahv','vcenter','esxi',
+  'nutanix','vmware','kubernetes','k8s','oracle','rman','mssql','sqlserver',
+  'hadoop','hdfs','cassandra','mongodb','couchbase','netapp','isilon',
+  'dataplatform','datahawk','sitecontinuity','datagovern',
+  'replication','tenant','organization','multitenancy',
+  'encryption','immutable','cyber vault','anomaly','ransomware',
+  'siren','iris_cli','cohesity_cli','support bundle','health check',
+  'aws','azure','gcp','s3','ec2','onedrive','sharepoint','exchange',
+  'snmp','syslog','siem','iops','throughput','dedup','compression',
+]);
+
+const PROPER_NOUN_STOP = new Set([
+  'This','That','The','And','For','With','From','When','Where','Which',
+  'How','What','Who','But','Not','All','Any','Its','Our','Your','Their',
+  'Each','Some','More','Also','Next','Then','Here','Note','Step','See',
+  'Use','Used','After','Before','While','Since','Under','Over','Into',
+  'About','Above','Below','Between','Within','Without','During','After',
+  'Before','Using','Click','Select','Enter','Type','Press','Check',
+]);
+
+const VALUE_UNITS_RE = /\d+\s*(gb|tb|pb|mb|kb|ms|sec|min|hour|day|week|month|year|node|port|vlan|mhz|ghz|vcpu|vm|rpm|watt|iops|mbps|gbps|%)/gi;
+
+function extractKeywords(text, headingPath) {
+  const combined = [text, ...headingPath].join(' ').toLowerCase();
+  const found = new Set();
+  for (const term of IMPORTANT_TERMS) {
+    if (combined.includes(term.toLowerCase())) found.add(term);
+  }
+  const combined2 = [text, ...headingPath].join(' ');
+  const properNouns = combined2.match(/\b[A-Z][a-z]{2,}\b/g) || [];
+  for (const w of properNouns) {
+    if (w.length > 3 && !PROPER_NOUN_STOP.has(w)) found.add(w.toLowerCase());
+  }
+  const values = text.match(VALUE_UNITS_RE) || [];
+  for (const v of values) found.add(v.toLowerCase());
+  return Array.from(found).slice(0, 30);
+}
+
+// ─── TOC extraction ───────────────────────────────────────────────────────────
+
+function extractToc(lines) {
+  const tocEntries = [];
+  let inToc = false;
+  let currentPage = 0;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const pageMatch = line.match(/^## Page (\d+)$/);
+    if (pageMatch) {
+      currentPage = parseInt(pageMatch[1], 10);
+      inToc = currentPage >= 3 && currentPage <= 12;
+      continue;
+    }
+    if (!inToc) continue;
+    const tocLine = line.match(/^(.+?)\s{3,}(\d+)\s*$/);
+    if (tocLine) {
+      const title = tocLine[1].trim();
+      const page  = parseInt(tocLine[2], 10);
+      if (title && page > 0 && page < 5000) {
+        const indent = (line.match(/^(\s*)/) || ['',''])[1].length;
+        const level  = indent < 2 ? 1 : indent < 6 ? 2 : 3;
+        tocEntries.push({ title, page, level });
+      }
+    }
+  }
+  return tocEntries;
+}
+
+// ─── Source metadata ──────────────────────────────────────────────────────────
+
+function extractSourceMeta(text, filename) {
+  const meta = {
+    file:        filename || '74_UserGuide_extracted.md',
+    title:       'Cohesity User Guide',
+    version:     '7.4',
+    published:   '',
+    extractedAt: '',
+    pdfPages:    0,
+  };
+  const versionMatch = text.match(/Version (\d+\.\d+)/);
+  if (versionMatch)  meta.version     = versionMatch[1];
+  const pubMatch     = text.match(/Published on (.+)/);
+  if (pubMatch)      meta.published   = pubMatch[1].trim();
+  const exMatch      = text.match(/Extracted:\s*(.+)/);
+  if (exMatch)       meta.extractedAt = exMatch[1].trim();
+  const pgMatch      = text.match(/PDF pages:\s*(\d+)/i);
+  if (pgMatch)       meta.pdfPages    = parseInt(pgMatch[1], 10);
+  return meta;
+}
+
+// ─── Page splitting ───────────────────────────────────────────────────────────
+
+function splitIntoPages(lines) {
+  const pages = [];
+  let current = null;
+  for (let i = 0; i < lines.length; i++) {
+    const m = lines[i].match(/^## Page (\d+)$/);
+    if (m) {
+      if (current) { current.lineEnd = i - 1; pages.push(current); }
+      current = { page: parseInt(m[1], 10), lineStart: i + 1, lineEnd: i + 1, lines: [] };
+    } else if (current) {
+      current.lines.push(lines[i]);
+    }
+  }
+  if (current) { current.lineEnd = lines.length - 1; pages.push(current); }
+  return pages;
+}
+
+// ─── Heading helpers ──────────────────────────────────────────────────────────
+
+function getHeadingLevel(line) {
+  const m = line.match(/^(#{1,6})\s/);
+  return m ? m[1].length : 0;
+}
+
+function cleanHeading(line) {
+  return line.replace(/^#{1,6}\s+/, '').trim();
+}
+
+function detectChapter(headingPath) {
+  for (const h of headingPath) {
+    if (/^chapter \d+/i.test(h)) return h;
+  }
+  return headingPath[0] || '';
+}
+
+// ─── Chunk emitter ────────────────────────────────────────────────────────────
+
+function emitChunk(chunkId, acc) {
+  const trimmedText = acc.text.trim();
+  if (!trimmedText) return null;
+  const topics     = classifyTopics(trimmedText, acc.headingPath);
+  const keywords   = extractKeywords(trimmedText, acc.headingPath);
+  const qTargets   = classifyQuestionTargets(topics, trimmedText);
+  const difficulty = computeDifficultySignals(trimmedText);
+  const chapter    = detectChapter(acc.headingPath);
+  const titlePath  = acc.headingPath.join(' / ') || `Page ${acc.pageStart}`;
+  const id         = 'ug-' + String(chunkId).padStart(6, '0');
+  return {
+    id,
+    title:              titlePath,
+    chapter,
+    headingPath:        [...acc.headingPath],
+    pageStart:          acc.pageStart,
+    pageEnd:            acc.pageEnd,
+    lineStart:          acc.lineStart,
+    lineEnd:            acc.lineEnd,
+    text:               trimmedText,
+    keywords,
+    topics,
+    questionTargets:    qTargets,
+    difficultySignals:  difficulty,
+    signals: {
+      hasProcedure:       difficulty.includes('has-procedure'),
+      hasTable:           difficulty.includes('has-table'),
+      hasCommand:         difficulty.includes('has-command'),
+      hasLimitsOrValues:  difficulty.includes('has-limits-or-values'),
+      hasWarningsOrNotes: difficulty.includes('has-warnings-or-notes'),
+    },
+  };
+}
+
+// ─── Chunker (async with yield points) ───────────────────────────────────────
+
+async function buildChunks(pages, maxChunkChars, overlapChars, onProgress) {
+  const chunks = [];
+  let chunkId  = 0;
+  let headingStack = [];
+  let acc = null;
+
+  function newAcc(page, seedText) {
+    return {
+      text:        seedText || '',
+      headingPath: [...headingStack],
+      pageStart:   page.page,
+      pageEnd:     page.page,
+      lineStart:   page.lineStart,
+      lineEnd:     page.lineStart,
+    };
+  }
+
+  function flushAcc(nextPage) {
+    if (!acc || !acc.text.trim()) return;
+    chunkId++;
+    const chunk = emitChunk(chunkId, acc);
+    if (chunk) chunks.push(chunk);
+    const trimmed = acc.text.trim();
+    const seed = trimmed.length > overlapChars ? trimmed.slice(trimmed.length - overlapChars) : trimmed;
+    acc = newAcc(nextPage, seed);
+  }
+
+  const yieldEvery = 200; // yield every N pages
+  for (let pi = 0; pi < pages.length; pi++) {
+    if (pi % yieldEvery === 0) {
+      onProgress(pi, pages.length);
+      await yieldToBrowser();
+    }
+
+    const page = pages[pi];
+    const pageText = page.lines.join('\n').trim();
+
+    if (!acc) acc = newAcc(page, '');
+
+    let hasChapterBoundary = false;
+    for (const line of page.lines) {
+      if (getHeadingLevel(line) === 1 && /^chapter \d+/i.test(cleanHeading(line))) {
+        hasChapterBoundary = true;
+        break;
+      }
+    }
+
+    if (acc.text.length + pageText.length > maxChunkChars && acc.text.trim().length > 0) {
+      flushAcc(page);
+    } else if (hasChapterBoundary && acc.text.trim().length > maxChunkChars / 4) {
+      flushAcc(page);
+    }
+
+    for (const line of page.lines) {
+      const level = getHeadingLevel(line);
+      if (level > 0) {
+        const title = cleanHeading(line);
+        while (headingStack.length >= level) headingStack.pop();
+        headingStack.push(title);
+      }
+    }
+
+    if (!acc.text.trim()) {
+      acc.headingPath = [...headingStack];
+    }
+
+    if (pageText.length > maxChunkChars) {
+      const pageLines = page.lines;
+      let buf = acc.text ? acc.text + '\n' : '';
+      let lineOffset = page.lineStart;
+      for (let li = 0; li < pageLines.length; li++) {
+        buf += pageLines[li] + '\n';
+        if (buf.length >= maxChunkChars) {
+          acc.text    = buf.trimEnd();
+          acc.pageEnd = page.page;
+          acc.lineEnd = lineOffset + li;
+          flushAcc(page);
+          buf = acc.text ? acc.text + '\n' : '';
+        }
+      }
+      if (buf.trim()) {
+        acc.text    = (acc.text ? acc.text + '\n' : '') + buf;
+        acc.pageEnd = page.page;
+        acc.lineEnd = page.lineEnd;
+      }
+    } else {
+      acc.text    = acc.text ? acc.text + '\n' + pageText : pageText;
+      acc.pageEnd = page.page;
+      acc.lineEnd = page.lineEnd;
+      if (acc.text.length >= maxChunkChars) {
+        flushAcc(pi + 1 < pages.length ? pages[pi + 1] : page);
+      }
+    }
+  }
+
+  if (acc && acc.text.trim()) {
+    chunkId++;
+    const chunk = emitChunk(chunkId, acc);
+    if (chunk) chunks.push(chunk);
+  }
+
+  return chunks;
+}
+
+// ─── Inverted index ───────────────────────────────────────────────────────────
+
+function buildInvertedIndex(chunks) {
+  const index = {};
+  for (const chunk of chunks) {
+    for (const kw of chunk.keywords) {
+      if (!index[kw]) index[kw] = [];
+      if (!index[kw].includes(chunk.id)) index[kw].push(chunk.id);
+    }
+  }
+  return Object.fromEntries(Object.entries(index).sort(([a], [b]) => a.localeCompare(b)));
+}
+
+// ─── Topic stats ──────────────────────────────────────────────────────────────
+
+function computeTopicStats(chunks) {
+  const counts = {};
+  for (const chunk of chunks) {
+    for (const t of chunk.topics) {
+      counts[t] = (counts[t] || 0) + 1;
+    }
+  }
+  return Object.fromEntries(Object.entries(counts).sort(([,a],[,b]) => b - a));
+}
+
+// ─── DOM references ───────────────────────────────────────────────────────────
+
+const fileInput     = document.getElementById('file-input');
+const dropZone      = document.getElementById('drop-zone');
+const chosenFile    = document.getElementById('chosen-filename');
+const btnParse      = document.getElementById('btn-parse');
+const btnDownload   = document.getElementById('btn-download');
+const statsSection  = document.getElementById('stats-section');
+const statsGrid     = document.getElementById('stats-grid');
+const sizeWarning   = document.getElementById('size-warning');
+
+let selectedFile = null;
+let downloadUrl  = null;
+
+// ─── File selection ───────────────────────────────────────────────────────────
+
+function handleFile(file) {
+  if (!file) return;
+  selectedFile = file;
+  chosenFile.textContent = file.name + ' (' + (file.size / 1024 / 1024).toFixed(2) + ' MB)';
+  chosenFile.style.display = 'block';
+  btnParse.disabled = false;
+  // Reset any previous download
+  btnDownload.style.display = 'none';
+  statsSection.classList.remove('visible');
+  if (downloadUrl) { URL.revokeObjectURL(downloadUrl); downloadUrl = null; }
+}
+
+fileInput.addEventListener('change', () => handleFile(fileInput.files[0]));
+
+dropZone.addEventListener('dragover', e => {
+  e.preventDefault();
+  dropZone.classList.add('drag-over');
+});
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('drag-over');
+  const file = e.dataTransfer?.files?.[0];
+  if (file) {
+    fileInput.value = '';
+    handleFile(file);
+  }
+});
+
+// ─── Main parse action ────────────────────────────────────────────────────────
+
+btnParse.addEventListener('click', async () => {
+  if (!selectedFile) return;
+
+  // Reset UI
+  logEl.innerHTML = '';
+  showLog();
+  setProgress(0);
+  btnDownload.style.display = 'none';
+  statsSection.classList.remove('visible');
+  sizeWarning.classList.remove('visible');
+  if (downloadUrl) { URL.revokeObjectURL(downloadUrl); downloadUrl = null; }
+  btnParse.disabled = true;
+
+  // Read options
+  const maxChunkChars = parseInt(document.getElementById('opt-max-chunk').value, 10) || 6000;
+  const overlapChars  = parseInt(document.getElementById('opt-overlap').value, 10) || 600;
+  const pretty        = document.getElementById('opt-pretty').checked;
+  const includeIndex  = document.getElementById('opt-index').checked;
+  const outputName    = document.getElementById('opt-output').value.trim() || 'cohesity-user-guide-knowledge.json';
+
+  try {
+    logHead('Cohesity User Guide Parser (browser)');
+    log(`File     : ${selectedFile.name}`);
+    log(`Size     : ${(selectedFile.size / 1024 / 1024).toFixed(2)} MB`);
+    log(`Chunk    : ${maxChunkChars} chars, overlap ${overlapChars} chars`);
+    log(`Options  : pretty=${pretty}, index=${includeIndex}`);
+    log('─'.repeat(52));
+
+    // Read file
+    log('\nReading file…');
+    await yieldToBrowser();
+    const rawText = await selectedFile.text();
+    log(`  Read ${fmt(rawText.length)} characters`);
+    setProgress(5);
+
+    const lines = rawText.split('\n');
+    log(`  Lines: ${fmt(lines.length)}`);
+
+    // Source metadata
+    const sourceMeta = extractSourceMeta(rawText, selectedFile.name);
+    log(`  Detected: ${sourceMeta.title} v${sourceMeta.version}, published ${sourceMeta.published || '(unknown)'}`);
+    log(`  Extracted at: ${sourceMeta.extractedAt || '(unknown)'}`);
+    await yieldToBrowser();
+
+    // Split pages
+    log('\nSplitting into pages…');
+    await yieldToBrowser();
+    const pages = splitIntoPages(lines);
+    if (pages.length === 0) {
+      logErr('ERROR: No page markers (## Page N) detected. Is this the correct file?');
+      btnParse.disabled = false;
+      return;
+    }
+    log(`  Detected ${fmt(pages.length)} pages (## Page 1 … ## Page ${pages[pages.length - 1].page})`);
+    setProgress(15);
+
+    // TOC
+    log('\nExtracting table of contents…');
+    await yieldToBrowser();
+    const toc = extractToc(lines);
+    log(`  TOC entries: ${fmt(toc.length)}`);
+    setProgress(20);
+
+    // Build chunks
+    log('\nBuilding chunks…');
+    await yieldToBrowser();
+
+    const chunks = await buildChunks(pages, maxChunkChars, overlapChars, (done, total) => {
+      const pct = 20 + Math.round((done / total) * 55);
+      setProgress(pct);
+      log(`  Processing pages ${fmt(done)}/${fmt(total)}…`);
+    });
+
+    if (chunks.length === 0) {
+      logErr('ERROR: No chunks produced. Check the input file and settings.');
+      btnParse.disabled = false;
+      return;
+    }
+
+    const chunkChars      = chunks.map(c => c.text.length);
+    const totalChunkChars = chunkChars.reduce((a, b) => a + b, 0);
+    const maxChunkSize    = Math.max(...chunkChars);
+    const avgChunkSize    = Math.round(totalChunkChars / chunks.length);
+    log(`  Chunks:        ${fmt(chunks.length)}`);
+    log(`  Total chars:   ${fmt(totalChunkChars)}`);
+    log(`  Largest chunk: ${fmt(maxChunkSize)} chars`);
+    log(`  Average chunk: ${fmt(avgChunkSize)} chars`);
+    setProgress(75);
+    await yieldToBrowser();
+
+    // Topic stats
+    const topicStats = computeTopicStats(chunks);
+    log('\nTop topics:');
+    Object.entries(topicStats).slice(0, 10).forEach(([t, n]) => log(`  ${t.padEnd(32)} ${n}`));
+
+    const allKeywords = new Set(chunks.flatMap(c => c.keywords));
+    log(`\nUnique keywords: ${fmt(allKeywords.size)}`);
+    setProgress(80);
+    await yieldToBrowser();
+
+    // Anomaly detection
+    const anomalies = [];
+    if (pages.length < 100) {
+      anomalies.push(`Only ${pages.length} pages detected — check ## Page N markers`);
+    } else if (sourceMeta.pdfPages > 0 && Math.abs(pages.length - sourceMeta.pdfPages) > sourceMeta.pdfPages * 0.1) {
+      anomalies.push(`Detected ${pages.length} pages but metadata reports ${sourceMeta.pdfPages} PDF pages`);
+    }
+    if (toc.length < 5)  anomalies.push('Fewer than 5 TOC entries found');
+    if (maxChunkSize > maxChunkChars * 1.5) anomalies.push(`Largest chunk (${maxChunkSize}) significantly exceeds maxChunkChars`);
+    if (anomalies.length > 0) {
+      log('\n⚠️  Potential anomalies:');
+      anomalies.forEach(a => logWarn('   ! ' + a));
+    }
+
+    // Optional inverted index
+    let invertedIndex;
+    if (includeIndex) {
+      log('\nBuilding inverted index…');
+      await yieldToBrowser();
+      invertedIndex = buildInvertedIndex(chunks);
+      log(`  Index keys: ${fmt(Object.keys(invertedIndex).length)}`);
+      setProgress(85);
+      await yieldToBrowser();
+    }
+
+    // Build output object
+    const generatedAt = new Date().toISOString();
+    const output = {
+      schemaVersion: 1,
+      source:        { ...sourceMeta },
+      generatedAt,
+      chunking: {
+        strategy:      'browser-page-and-heading-aware',
+        maxChunkChars,
+        overlapChars,
+      },
+      stats: {
+        chunks:     chunks.length,
+        characters: totalChunkChars,
+        pagesDetected: pages.length,
+        keywords:   allKeywords.size,
+        topics:     topicStats,
+      },
+      toc,
+      chunks,
+      ...(invertedIndex !== undefined ? { invertedIndex } : {}),
+    };
+
+    // Serialize to JSON
+    log('\nSerializing JSON…');
+    await yieldToBrowser();
+    const json = pretty ? JSON.stringify(output, null, 2) : JSON.stringify(output);
+    const sizeBytes = new TextEncoder().encode(json).length;
+    const sizeMB    = (sizeBytes / 1024 / 1024).toFixed(2);
+    log(`  Output size: ${sizeMB} MB (${fmt(sizeBytes)} bytes)`);
+    setProgress(95);
+    await yieldToBrowser();
+
+    if (sizeBytes > 50 * 1024 * 1024) {
+      sizeWarning.textContent = `⚠️ Output is ${sizeMB} MB. Some browsers may be slow to download files this large. Use minified JSON (uncheck "Pretty-print") to reduce size.`;
+      sizeWarning.classList.add('visible');
+    }
+
+    // Create download blob
+    const blob = new Blob([json], { type: 'application/json' });
+    downloadUrl = URL.createObjectURL(blob);
+    btnDownload.href = downloadUrl;
+    btnDownload.download = outputName;
+    btnDownload.style.display = 'inline-flex';
+    setProgress(100);
+
+    logOk('\n✅ Done!');
+    logOk(`   Chunks:   ${fmt(chunks.length)}`);
+    logOk(`   Pages:    ${fmt(pages.length)}`);
+    logOk(`   Output:   ${sizeMB} MB → ${outputName}`);
+
+    // Show stats section
+    statsGrid.innerHTML = '';
+    const stats = [
+      { num: fmt(chunks.length),      label: 'Chunks' },
+      { num: fmt(pages.length),       label: 'Pages detected' },
+      { num: fmt(toc.length),         label: 'TOC entries' },
+      { num: fmt(allKeywords.size),   label: 'Unique keywords' },
+      { num: Object.keys(topicStats).length, label: 'Topics' },
+      { num: sizeMB + ' MB',          label: 'Output size' },
+      { num: fmt(avgChunkSize),       label: 'Avg chunk chars' },
+      { num: fmt(maxChunkSize),       label: 'Max chunk chars' },
+    ];
+    for (const s of stats) {
+      const box = document.createElement('div');
+      box.className = 'stat-box';
+      box.innerHTML = `<div class="stat-num">${s.num}</div><div class="stat-label">${s.label}</div>`;
+      statsGrid.appendChild(box);
+    }
+    statsSection.classList.add('visible');
+
+  } catch (err) {
+    logErr('\nERROR: ' + err.message);
+    console.error(err);
+  } finally {
+    btnParse.disabled = false;
+  }
+});
+</script>
+</body>
+</html>
