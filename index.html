@@ -394,6 +394,7 @@
           </div>
           <div class="button-row">
             <button id="loadHistoryButton" type="button" class="secondary">Load selected set</button>
+            <button id="exportHistorySetButton" type="button" class="ghost" aria-label="Export the currently selected question set as a JSON file">Export selected set</button>
             <button id="clearHistoryButton" type="button" class="ghost">Clear all history</button>
           </div>
         </section>
@@ -3584,6 +3585,7 @@ window.COHESITY_QUESTION_BANK =
     const historyPanel = document.getElementById('historyPanel');
     const historySelect = document.getElementById('historySelect');
     const loadHistoryButton = document.getElementById('loadHistoryButton');
+    const exportHistorySetButton = document.getElementById('exportHistorySetButton');
     const clearHistoryButton = document.getElementById('clearHistoryButton');
     const statsContent = document.getElementById('statsContent');
     const useGuideKnowledgeCheckbox = document.getElementById('useGuideKnowledgeCheckbox');
@@ -4848,6 +4850,44 @@ window.COHESITY_QUESTION_BANK =
       renderHistoryDropdown();
       renderStatsPanel();
       examStatus.textContent = 'Exam history cleared.';
+    }
+
+    // ── Export single history set ─────────────────────────────────────────────
+    function exportHistorySet() {
+      const id = historySelect.value;
+      if (!id) {
+        examStatus.textContent = 'Select a saved set from the dropdown first, then click Export selected set.';
+        return;
+      }
+      const history = loadHistory();
+      const entry = history.find(e => e.id === id);
+      if (!entry || !Array.isArray(entry.questions) || !entry.questions.length) {
+        examStatus.textContent = 'Could not export the selected set — data may be corrupt.';
+        return;
+      }
+      const payload = {
+        exportedAt: new Date().toISOString(),
+        generatedAt: entry.generatedAt,
+        source: entry.source,
+        domains: entry.domains,
+        model: entry.model || null,
+        questionCount: entry.questions.length,
+        questions: entry.questions,
+        metadata: entry.metadata || null
+      };
+      const dateSlug = (entry.generatedAt && /^\d{4}-\d{2}-\d{2}/.test(entry.generatedAt))
+        ? entry.generatedAt.slice(0, 10)
+        : new Date().toISOString().slice(0, 10);
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `cohesity-question-set-${dateSlug}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      examStatus.textContent = `Exported "${historySelect.options[historySelect.selectedIndex].textContent}" as JSON.`;
     }
 
     // ── Stats panel ──────────────────────────────────────────────────────────
@@ -6360,6 +6400,7 @@ window.COHESITY_QUESTION_BANK =
     generateAIButton.addEventListener('click', generateAIExam);
     adhocLookupButton.addEventListener('click', runAdhocLookup);
     loadHistoryButton.addEventListener('click', loadHistorySet);
+    exportHistorySetButton.addEventListener('click', exportHistorySet);
     clearHistoryButton.addEventListener('click', clearAllHistory);
 
     // ── Guide-grounded generation event listeners ────────────────────────────
