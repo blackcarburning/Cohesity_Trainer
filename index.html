@@ -406,15 +406,15 @@
             <input type="file" id="guideKnowledgeFileInput" accept=".json" style="display:none;" aria-label="Load guide knowledge JSON file manually">
             <button id="loadGuideManuallyButton" type="button" class="ghost" style="display:none;margin-top:6px;" aria-label="Select guide knowledge JSON file">Load JSON file manually</button>
             <details id="guideTopicsDetails" style="display:none;margin-top:10px;">
-              <summary style="cursor:pointer;font-weight:600;font-size:0.92em;">Guide subjects / weighting</summary>
+              <summary style="cursor:pointer;font-weight:600;font-size:0.92em;">Guide topics / weighting</summary>
               <div style="margin-top:8px;">
                 <div style="display:flex;gap:5px;margin-bottom:6px;flex-wrap:wrap;align-items:center;">
                   <button type="button" id="guideTopicsSelectAll" class="ghost" style="font-size:0.8em;padding:2px 7px;">Select all</button>
                   <button type="button" id="guideTopicsClearAll" class="ghost" style="font-size:0.8em;padding:2px 7px;">Clear all</button>
                   <button type="button" id="guideTopicsCoreExam" class="ghost" style="font-size:0.8em;padding:2px 7px;">Core exam topics</button>
-                  <input type="search" id="guideTopicsFilter" placeholder="Filter subjects…" aria-label="Filter guide subjects" style="font-size:0.8em;padding:2px 6px;flex:1;min-width:80px;border:1px solid var(--border,#ccc);border-radius:4px;">
+                  <input type="search" id="guideTopicsFilter" placeholder="Filter topics…" aria-label="Filter guide topics" style="font-size:0.8em;padding:2px 6px;flex:1;min-width:80px;border:1px solid var(--border,#ccc);border-radius:4px;">
                 </div>
-                <div id="guideTopicsChecklist" role="group" aria-label="Guide subjects" style="max-height:220px;overflow-y:auto;display:grid;grid-template-columns:1fr 1fr;gap:2px 8px;font-size:0.83em;"></div>
+                <div id="guideTopicsChecklist" role="group" aria-label="Guide topics" style="max-height:220px;overflow-y:auto;display:grid;grid-template-columns:1fr 1fr;gap:2px 8px;font-size:0.83em;"></div>
                 <p id="guideTopicsWarning" class="help" aria-live="polite" style="display:none;margin-top:4px;color:var(--danger,#c00);"></p>
               </div>
             </details>
@@ -3738,7 +3738,7 @@ window.COHESITY_QUESTION_BANK =
       guideKnowledgeStatus.style.color = isError ? 'var(--danger, #c00)' : '';
     }
 
-    // ── Guide subject / topic checklist ─────────────────────────────────────
+    // ── Guide topic checklist ────────────────────────────────────────────────
     function guideTopicLabel(topicId) {
       return GUIDE_TOPIC_LABELS[topicId] || topicId.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
     }
@@ -3804,7 +3804,7 @@ window.COHESITY_QUESTION_BANK =
     function updateGuideTopicsWarning() {
       if (!guideTopicsWarning) return;
       if (selectedGuideTopics && selectedGuideTopics.size === 0) {
-        guideTopicsWarning.textContent = 'No guide subjects selected. Select at least one subject before generating guide-grounded questions.';
+        guideTopicsWarning.textContent = 'No guide topics selected. Select at least one topic before generating guide-grounded questions.';
         guideTopicsWarning.style.display = '';
       } else {
         guideTopicsWarning.style.display = 'none';
@@ -4079,7 +4079,7 @@ window.COHESITY_QUESTION_BANK =
           'For each question, include at least one of these optional source fields where the guide excerpts support it: "sourceGuideChunkIds" (array of chunk ID strings), "sourceGuidePages" (array of page number strings), "sourceGuideTopics" (array of guide topic strings). Example: {"sourceGuideChunkIds":["c42"],"sourceGuideTopics":["dataprotect"]}.',
           'Guide and exam rules take priority over steering guidance if there is a conflict.',
           'The existing JSON schema, quality, distractor, and multi-select rules remain in full effect.',
-          ...(topicsStr ? [`Emphasize questions covering these selected guide subjects: ${topicsStr}.`] : []),
+          ...(topicsStr ? [`Emphasize questions covering these selected guide topics: ${topicsStr}.`] : []),
         ].join('\n'));
       }
       if (steeringGuidance) {
@@ -5317,7 +5317,7 @@ window.COHESITY_QUESTION_BANK =
 
         // Block generation if no guide topics are selected
         if (activeSelectedTopics && activeSelectedTopics.size === 0) {
-          examStatus.textContent = 'Select at least one guide subject before generating guide-grounded questions. Use the "Guide subjects / weighting" panel to enable topics.';
+          examStatus.textContent = 'Select at least one guide topic before generating guide-grounded questions. Use the "Guide topics / weighting" panel to enable topics.';
           generateAIButton.disabled = false;
           generateAIButton.textContent = previousLabel;
           return;
@@ -5329,7 +5329,7 @@ window.COHESITY_QUESTION_BANK =
         } else {
           // Guide loaded but no relevant chunks — surface a clear message and stop
           const noChunksMsg = activeSelectedTopics && activeSelectedTopics.size > 0
-            ? 'No relevant guide chunks found for the selected subjects and steering text. Select more subjects or broaden the steering guidance.'
+            ? 'No relevant guide chunks found for the selected topics and steering text. Select more topics or broaden the steering guidance.'
             : 'No relevant guide chunks found for the current settings. Try broadening the steering guidance or domain selection.';
           examStatus.textContent = noChunksMsg;
           generateAIButton.disabled = false;
@@ -5345,7 +5345,7 @@ window.COHESITY_QUESTION_BANK =
       const baseStatusPrefix = guideContext
         ? [
             `Requesting ${OPENAI_REQUEST_QUESTION_COUNT} guide-grounded AI questions from OpenAI using ${chunkCount} guide chunk${chunkCount === 1 ? '' : 's'}`,
-            selectedTopicLabels ? `across selected subjects: ${selectedTopicLabels.slice(0, 5).join(', ')}${selectedTopicLabels.length > 5 ? ` +${selectedTopicLabels.length - 5} more` : ''}` : null,
+            selectedTopicLabels ? `across selected topics: ${selectedTopicLabels.slice(0, 5).join(', ')}${selectedTopicLabels.length > 5 ? ` +${selectedTopicLabels.length - 5} more` : ''}` : null,
             '— correct answers must be supported by the guide excerpts.',
           ].filter(Boolean).join(' ')
         : `Requesting ${OPENAI_REQUEST_QUESTION_COUNT} AI questions from OpenAI...`;
@@ -5492,7 +5492,7 @@ window.COHESITY_QUESTION_BANK =
           const topicsDisplay = selectedTopicLabels
             ? selectedTopicLabels.slice(0, 5).join(', ') + (selectedTopicLabels.length > 5 ? ` +${selectedTopicLabels.length - 5} more` : '')
             : null;
-          statusMessage += ` Generated using Cohesity User Guide grounding from ${chunkCount} chunk${chunkCount === 1 ? '' : 's'}${topicsDisplay ? ` (subjects: ${topicsDisplay})` : ''}.`;
+          statusMessage += ` Generated using Cohesity User Guide grounding from ${chunkCount} chunk${chunkCount === 1 ? '' : 's'}${topicsDisplay ? ` (topics: ${topicsDisplay})` : ''}.`;
           if (questionsWithFallbackSourceMeta > 0) {
             warningMessage = warningMessage
               ? `${warningMessage} Some guide-grounded questions did not include exact source chunk metadata; generation-level guide context metadata was preserved instead.`

@@ -65,37 +65,37 @@ Guide-grounded mode uses the parsed guide as source-of-truth: the AI is explicit
 3. Status text will update:
    - `Loading guide knowledge…` — the app is fetching the JSON file.
    - `Loaded Cohesity User Guide knowledge: 1850 chunks, 4970 pages.` — ready to use (exact numbers depend on the version of the guide JSON).
-4. A **Guide subjects / weighting** panel appears. Select which guide topics should be eligible for generation (see below).
+4. A **Guide topics / weighting** panel appears. Select which guide topics should be eligible for generation (see below).
 5. Optionally enter steering guidance in the **Steering guidance** box.
 6. Click **Generate AI exam (70→50)**.
 
 The status bar will confirm guide grounding during and after generation, for example:
 ```
-Requesting 70 guide-grounded AI questions from OpenAI using 12 guide chunks across selected subjects: DataProtect, VMware, Nutanix — correct answers must be supported by the guide excerpts.
-Generated using Cohesity User Guide grounding from 12 chunks (subjects: DataProtect, VMware, Nutanix).
+Requesting 70 guide-grounded AI questions from OpenAI using 12 guide chunks across selected topics: DataProtect, VMware, Nutanix — correct answers must be supported by the guide excerpts.
+Generated using Cohesity User Guide grounding from 12 chunks (topics: DataProtect, VMware, Nutanix).
 ```
 
 Guide-grounding metadata is saved in the AI history entry so you can tell which sets were generated with guide grounding.
 
-#### Guide subjects / topic checklist
+#### Guide topics checklist
 
-After the guide JSON loads, a collapsible **Guide subjects / weighting** panel appears. It lists all guide topics with chunk counts, derived from `chunks[].topics` in the guide JSON (e.g. `dataprotect: 1507`).
+After the guide JSON loads, a collapsible **Guide topics / weighting** panel appears. It lists all guide topics with chunk counts, derived from `chunks[].topics` in the guide JSON (e.g. `dataprotect: 1507`).
 
-- **Check/uncheck** subjects to include or exclude them from retrieval. Only checked subjects are eligible for chunk retrieval.
-- **Select all** — enable every subject.
-- **Clear all** — disable every subject (generation is blocked when no subjects are selected, with a warning).
+- **Check/uncheck** topics to include or exclude them from retrieval. Only checked topics are eligible for chunk retrieval.
+- **Select all** — enable every topic.
+- **Clear all** — disable every topic (generation is blocked when no topics are selected, with a warning).
 - **Core exam topics** — select the recommended subset aligned to the Cohesity Architect Expert exam scope.
 - **Filter box** — type to search topic names if the list is long.
 - Your selection is saved in `localStorage` under the key `cohesity_trainer_guide_selected_topics` and restored on reload.
 
-Selected subjects **strongly boost** chunks matching those topic tags during retrieval. If no chunks are found after filtering, generation shows a clear message instead of proceeding empty.
+Selected topics **strongly boost** chunks matching those topic tags during retrieval. If no chunks are found after filtering, generation shows a clear message instead of proceeding empty.
 
 #### How chunk retrieval works
 
 When guide mode is enabled and generation is triggered, the app:
 
 1. Scores all 1850 chunks using a deterministic lexical algorithm based on:
-   - **Selected guide subjects** — chunks whose `topics` overlap with the checklist selection receive a very strong boost (+20 per matching topic). When subjects are selected, retrieval preferentially returns chunks from those topics.
+   - **Selected guide topics** — chunks whose `topics` overlap with the checklist selection receive a very strong boost (+20 per matching topic). When topics are selected, retrieval preferentially returns chunks from those topics.
    - Selected exam domains mapped to guide topic tags (e.g. DataProtect → `dataprotect`, `vmware`, `nutanix`).
    - Steering text keywords matched against chunk `topics`, `keywords`, `headingPath`, and a preview of `text`.
    - `questionTargets` (design, architecture, implementation-detail, troubleshooting, etc.) boosted when they overlap with common exam targets.
@@ -132,7 +132,7 @@ Steering text and guide grounding work together:
 
 - Steering terms are used **both** to retrieve relevant chunks and to guide the LLM's emphasis.
 - For example, `Make 40% of the questions about Nutanix backup` will retrieve guide chunks tagged with `nutanix` and `dataprotect` and also tell the LLM to emphasize that topic.
-- Selected subjects from the checklist are also communicated to the LLM in the prompt, reinforcing emphasis.
+- Selected topics from the checklist are also communicated to the LLM in the prompt, reinforcing emphasis.
 - Guide and exam rules always take priority over steering guidance if there is a conflict.
 
 #### What the app sends to OpenAI
