@@ -15,6 +15,7 @@ Open `index.html` in a browser to use the Cohesity Certified Architect Expert pr
 - AI generation is tuned for Cohesity product-specific Architect Expert scope, with technical scenario questions and plausible Cohesity-adjacent distractors instead of absurd wrong answers.
 - Answer choices are randomized whenever exams are generated or saved sets are loaded, and correct-answer index metadata is remapped automatically.
 - AI-generated question sets are saved to browser local storage and appear in the history dropdown labelled **AI generated**.
+- Optional **Steer AI question generation** text box lets you guide emphasis (for example: more installation questions, design-focused questions, or ~40% Nutanix backup coverage) while preserving exam scope, schema, quality, and safety rules.
 - Each question card includes an **Explain correct answer with LLM** button for inline study assistance (available after revealing or submitting).
 - Right-side ad hoc LLM lookup box for quick study questions using the same API key/model settings.
 - All generated exam sets are saved to browser local storage and appear in the history dropdown.
@@ -25,9 +26,15 @@ Open `index.html` in a browser to use the Cohesity Certified Architect Expert pr
 
 ### AI exam generation
 - Click **Generate AI exam (70→50)** to request 70 fresh questions from OpenAI.
+- Use **Steer AI question generation** (optional) to add extra guidance such as:
+  - `More questions on installation`
+  - `Make the questions more design focused`
+  - `Make 40% of the questions about Nutanix backup`
 - The app validates each returned question individually, skips invalid entries, and reports returned/valid/skipped/displayed counts in status text.
 - After validation, each AI question's choices are shuffled post-receipt to avoid fixed correct-answer positions from model output ordering.
 - The AI prompt explicitly targets Cohesity product-level technical detail, architectural decision-making, supported workflow differences, troubleshooting/gap-analysis reasoning, and scenario-based design questions.
+- Steering guidance is applied only when it stays compatible with Cohesity Architect Expert scope.
+- Steering cannot override JSON/schema/output-count requirements, distractor and multi-select rules, the ~10% implementation-detail requirement, official-doc citation preference, or prompt-injection/safety constraints.
 - The AI prompt also requires plausible Cohesity-adjacent distractors that are wrong for a clear reason (scope, workflow stage, deployment model, feature purpose, or design implication), rather than silly or unrelated answers.
 - Approximately 10% of the 70 requested questions (roughly 7) are technical implementation-detail questions. These cover topics such as SpanFS/filesystem behaviour, UI/Siren health-check workflows, Cohesity services/components (for example iris, magneto, bridge), their purpose, important states/values, and troubleshooting or capacity/performance signals. Official Cohesity documentation is used as the source where available, and questions remain architect-relevant rather than raw command trivia.
 - Generated questions with obviously silly distractor terms (for example `cafeteria`, `rack screw`, `coffee`, or `printer toner`) are rejected during validation while maintaining partial-generation fallback behavior.
@@ -87,7 +94,7 @@ Open `index.html` in a browser to use the Cohesity Certified Architect Expert pr
 - Up to the **25 most recent** sets are kept. Older sets are automatically pruned.
 - Click **Clear all history** to remove all saved sets from local storage.
 - If local storage is unavailable (e.g. private browsing mode or quota exceeded), a warning is shown and history falls back to in-session only.
-- Saved AI history metadata includes model, selected domains, final count, AI-generated count, built-in fallback count, retained current-exam count (when applicable), skipped invalid generated count, and returned generated count.
+- Saved AI history metadata includes model, selected domains, final count, AI-generated count, built-in fallback count, retained current-exam count (when applicable), skipped invalid generated count, returned generated count, and the steering guidance used for that generation when provided.
 
 ### Question bank & memory stats
 - The stats panel shows:
@@ -100,6 +107,7 @@ Open `index.html` in a browser to use the Cohesity Certified Architect Expert pr
 
 ### API key and model memory
 - Your OpenAI API key and selected model are saved in browser local storage so they persist across page reloads.
+- The optional AI generation steering text is also saved in browser local storage for reuse after refresh.
 - ⚠️ **Security warning:** Storing your API key in local storage is convenient but less secure on shared or public machines. Anyone with access to DevTools on the same machine/browser profile can read it. Use the **Forget saved API key** button to remove it when done, especially on shared devices.
 - The **Forget saved API key** button clears the key from local storage and from the input field immediately.
 - API keys are **sanitized before use and before saving**: leading/trailing whitespace, wrapping quotes, hidden zero-width characters, and internal newlines are stripped automatically. The sanitized value is saved back to local storage.
@@ -109,9 +117,10 @@ Open `index.html` in a browser to use the Cohesity Certified Architect Expert pr
 ### Export configuration
 - Click **Export configuration** to download a `.json` file containing:
   - Selected model
+  - Current AI generation steering text (`generationSteeringPrompt`)
   - Selected domains
   - Timer setting
-  - Metadata for all saved history entries (id, date, source, model, question count, plus AI/fallback generation details when available)
+  - Metadata for all saved history entries (id, date, source, model, question count, plus AI/fallback generation details and steering metadata when available)
   - Full question data for all saved sets including AI-generated ones (`savedQuestionSets` field)
   - Schema version and export timestamp
 - **The API key is intentionally excluded** from the export file for security. Re-enter it manually after loading the config on another machine.
@@ -121,6 +130,7 @@ Open `index.html` in a browser to use the Cohesity Certified Architect Expert pr
 - Click **Import configuration** and select a `.json` file previously exported by this app.
 - The import reads the file entirely in the browser — no data is sent to any server.
 - **API keys are never imported**, even if an exported file somehow contained one.
+- Import restores saved question sets/history data; it does not overwrite your current in-page steering text.
 - Valid saved question sets from the file are merged into your existing browser history. Existing sets are not erased.
 - Duplicate sets (matched by their unique `id`) are skipped automatically to prevent double-importing.
 - Malformed question sets are skipped with a warning; the rest of the import continues.
