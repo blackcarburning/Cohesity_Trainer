@@ -198,6 +198,7 @@
       font: inherit;
       line-height: 1.4;
     }
+    .steering-query { min-height: 72px; }
     .lookup-response {
       margin-top: 8px;
       border: 1px solid var(--border);
@@ -392,7 +393,7 @@
           <div class="lookup-section" aria-labelledby="generation-steering-heading">
             <h3 id="generation-steering-heading" style="margin:0 0 8px 0;">Steer AI question generation</h3>
             <label for="aiSteeringPrompt">Steering guidance</label>
-            <textarea id="aiSteeringPrompt" class="lookup-query" placeholder="Optional: More installation questions, make questions more design focused, make 40% about Nutanix backup..." style="min-height:72px;"></textarea>
+            <textarea id="aiSteeringPrompt" class="lookup-query steering-query" placeholder="Optional: More installation questions, make questions more design focused, make 40% about Nutanix backup..."></textarea>
             <p class="help">Optional guidance is added to the AI prompt while preserving exam scope and quality rules.</p>
           </div>
           <div class="button-row">
@@ -3673,7 +3674,7 @@ window.COHESITY_QUESTION_BANK =
           '<steering>',
           steeringGuidance,
           '</steering>',
-          `Apply this guidance where it is compatible with the Cohesity Certified Architect Expert exam scope and all rules above. If the guidance asks for a percentage or emphasis, approximate it across the ${OPENAI_REQUEST_QUESTION_COUNT} requested questions.`,
+          'Apply this guidance where it is compatible with the Cohesity Certified Architect Expert exam scope and all rules above. If the guidance asks for a percentage or emphasis, approximate it across the requested questions.',
           ...steeringGuardrails
         ].join('\n'));
       }
@@ -3775,7 +3776,7 @@ window.COHESITY_QUESTION_BANK =
     function sanitizeSteeringPrompt(raw) {
       if (typeof raw !== 'string') return '';
       let prompt = raw
-        // Remove control characters and DEL.
+        // Remove most control chars and DEL; tabs/newlines are normalized by trim/slice flow.
         .replace(/[\u0000-\u0008\u000B-\u001F\u007F]/g, ' ')
         // Remove invisible and formatting-only Unicode characters.
         .replace(/[\u00AD\u00A0\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/g, '')
@@ -4861,8 +4862,7 @@ window.COHESITY_QUESTION_BANK =
         const selectedDomains = getSelectedDomains();
         const rawSteeringPrompt = aiSteeringPromptInput.value;
         const steeringPrompt = sanitizeSteeringPrompt(rawSteeringPrompt);
-        const steeringPromptWasSanitized = steeringPrompt !== rawSteeringPrompt;
-        if (steeringPromptWasSanitized) aiSteeringPromptInput.value = steeringPrompt;
+        if (steeringPrompt !== rawSteeringPrompt) aiSteeringPromptInput.value = steeringPrompt;
         saveSteeringPrompt();
         const { payload, usedDefaultTemperature: examUsedDefaultTemperature } =
           await openAIChatWithTemperatureFallback(apiKey, {
