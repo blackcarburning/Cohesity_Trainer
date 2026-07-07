@@ -163,14 +163,40 @@ Open `index.html` in a browser to use the Cohesity Certified Architect Expert pr
 
 The repository includes `74_UserGuide_extracted.md`, a full extraction of the
 Cohesity User Guide 7.4 (PDF pages 1–4970, ~8 MB of markdown). The parser
-script reads this file and produces a structured JSON knowledge base suitable
-for later loading by `index.html` via `fetch()` or embedding as a JS constant.
+reads this file and produces a structured JSON knowledge base (page/heading-aware
+chunks with topic tags, keywords, question targets, and difficulty signals) suitable
+for later guide-grounded LLM question generation in `index.html`.
 
-### Requirements
+### ✅ Recommended: browser parser (no Node.js required)
 
-Node.js 18 or later (no external npm dependencies — only Node built-ins are used).
+`tools/parse-user-guide.html` is a fully self-contained browser tool. No Node.js,
+npm, terminal, or local server is required.
 
-### Running the parser
+**Steps:**
+
+1. Open `tools/parse-user-guide.html` directly in any modern browser
+   (double-click the file or use `File → Open` in Chrome/Edge/Firefox).
+2. Click **Choose file** (or drag and drop) and select `74_UserGuide_extracted.md`.
+3. Adjust options if desired:
+   - **Output filename** — default `cohesity-user-guide-knowledge.json`
+   - **Max chunk chars** — default `6000`
+   - **Overlap chars** — default `600`
+   - **Pretty-print JSON** — checked by default (uncheck for a smaller file)
+   - **Include inverted keyword index** — optional, increases file size
+4. Click **Parse & Generate JSON**.
+5. Watch the status log for progress. Summary statistics appear when complete.
+6. Click **Download JSON** to save `cohesity-user-guide-knowledge.json` locally.
+7. Upload or commit the generated JSON file to the repository when ready.
+
+The file is read and processed entirely in your browser — nothing is uploaded to
+any server. The output is typically **14–20 MB** (pretty) or **~14 MB** (minified).
+If the output exceeds ~50 MB the page will show a size warning.
+
+### Alternative: Node.js parser (advanced / automation)
+
+If you have Node.js 18 or later available, `scripts/parse-user-guide.js` provides
+additional options (JSONL output, custom paths) and can be used in automated pipelines.
+No external npm dependencies are required — only Node built-ins.
 
 Run from the **repository root**:
 
@@ -195,8 +221,6 @@ node scripts/parse-user-guide.js --index
 node scripts/parse-user-guide.js --jsonl --output data/cohesity-user-guide-knowledge.jsonl
 ```
 
-All options:
-
 | Option | Default | Description |
 |---|---|---|
 | `--input <path>` | `74_UserGuide_extracted.md` | Input markdown file |
@@ -207,20 +231,17 @@ All options:
 | `--index` | off | Include full `invertedIndex` in output |
 | `--jsonl` | off | Write JSONL (one JSON object per line) |
 
-### Expected output
+### Output structure
 
-The script produces a single JSON (or JSONL) file. With default settings and the
-full user guide the output is approximately **14–20 MB** (pretty) or **14 MB** (minified).
-
-The top-level structure is:
+Both parsers produce the same JSON shape:
 
 ```json
 {
   "schemaVersion": 1,
-  "source": { "file": "...", "title": "...", "version": "7.4", "pdfPages": 4970 },
+  "source": { "file": "74_UserGuide_extracted.md", "title": "Cohesity User Guide", "version": "7.4", "pdfPages": 4970 },
   "generatedAt": "...",
-  "chunking": { "strategy": "page-and-heading-aware", "maxChunkChars": 6000, "overlapChars": 600 },
-  "stats": { "chunks": 1850, "characters": 9307961, "pages": 4970, "keywords": 432, "topics": {} },
+  "chunking": { "strategy": "browser-page-and-heading-aware", "maxChunkChars": 6000, "overlapChars": 600 },
+  "stats": { "chunks": 1850, "characters": 9307961, "pagesDetected": 4970, "keywords": 432, "topics": {} },
   "toc": [ { "title": "Chapter 4: Cluster Administration", "page": 227, "level": 1 } ],
   "chunks": [
     {
@@ -237,12 +258,13 @@ The top-level structure is:
       "topics": ["cluster-administration", "services", "implementation-detail"],
       "questionTargets": ["implementation-detail", "troubleshooting"],
       "difficultySignals": ["has-procedure", "has-command"],
-      "hasProcedure": true,
-      "hasTable": false,
-      "hasCommand": true,
-      "hasLimitsOrValues": false,
-      "hasWarningsOrNotes": false,
-      "searchText": "normalized lower-case text for browser search"
+      "signals": {
+        "hasProcedure": true,
+        "hasTable": false,
+        "hasCommand": true,
+        "hasLimitsOrValues": false,
+        "hasWarningsOrNotes": false
+      }
     }
   ]
 }
@@ -251,8 +273,8 @@ The top-level structure is:
 ### Note on file size and `.gitignore`
 
 The generated output file is **intentionally excluded from the repository** by
-`.gitignore` (see the `data/` entries). This keeps the PR small since the file
-can be regenerated locally at any time.
+`.gitignore` (see the `data/` entries). This keeps the repository small since the
+file can be regenerated at any time.
 
 To commit the generated output when you are ready to upload it:
 
@@ -271,8 +293,8 @@ The JSON is designed for retrieval-grounded question generation:
 2. **Select relevant chunks** based on the user's steering guidance (e.g. "More Nutanix backup questions") by filtering on `topics`, `keywords`, `chapter`, or `questionTargets`.
 3. **Send the selected chunk texts** to the LLM alongside the existing prompt so every generated question is grounded in the official user guide rather than relying solely on the model's memory.
 4. **Use `questionTargets`** (`architecture`, `design`, `implementation-detail`, `troubleshooting`, `security`, `operations`, `workload-protection`) to steer the mix of question types.
-5. **Use `difficultySignals`** (`has-procedure`, `has-table`, `has-command`, `has-limits-or-values`, `has-warnings-or-notes`) to prefer chunks that are rich in testable detail.
-6. **Use the inverted index** (if generated with `--index`) for fast keyword-based chunk lookup in the browser.
+5. **Use `difficultySignals`** / `signals` to prefer chunks that are rich in testable detail.
+6. **Use the inverted index** (if generated with the index option) for fast keyword-based chunk lookup in the browser.
 
 This enables steering prompts like:
 - `More questions on installation` → retrieve chunks with `topics: ["implementation-detail"]`
