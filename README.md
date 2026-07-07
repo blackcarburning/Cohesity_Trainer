@@ -16,6 +16,7 @@ Open `index.html` in a browser to use the Cohesity Certified Architect Expert pr
 - Answer choices are randomized whenever exams are generated or saved sets are loaded, and correct-answer index metadata is remapped automatically.
 - AI-generated question sets are saved to browser local storage and appear in the history dropdown labelled **AI generated**.
 - Optional **Steer AI question generation** text box lets you guide emphasis (for example: more installation questions, design-focused questions, or ~40% Nutanix backup coverage) while preserving exam scope, schema, quality, and safety rules.
+- Optional **Guide-grounded generation** mode uses `cohesity-user-guide-knowledge.json` as source material for more accurate, harder questions grounded in the official Cohesity documentation.
 - Each question card includes an **Explain correct answer with LLM** button for inline study assistance (available after revealing or submitting).
 - Right-side ad hoc LLM lookup box for quick study questions using the same API key/model settings.
 - All generated exam sets are saved to browser local storage and appear in the history dropdown.
@@ -50,6 +51,58 @@ Open `index.html` in a browser to use the Cohesity Certified Architect Expert pr
 - If local storage fails, the exam still loads into the current pane and a warning is shown.
 - **The built-in question bank is not modified by AI generation.** AI questions live only in the current session and browser local storage.
 - AI-generated content is still study assistance: review exam-critical facts against official Cohesity documentation before relying on them.
+
+### Guide-grounded AI generation
+
+When `cohesity-user-guide-knowledge.json` is present in the same directory as `index.html`, you can enable **guide-grounded generation** to produce more accurate, harder questions grounded in the official Cohesity User Guide 7.4.
+
+#### Enabling guide-grounded mode
+
+1. Enter your OpenAI API key in the right panel.
+2. Tick **Use Cohesity User Guide knowledge** in the **Guide-grounded generation** section (below the steering box).
+3. Status text will update:
+   - `Loading guide knowledge…` — the app is fetching the JSON file.
+   - `Loaded Cohesity User Guide knowledge: 1850 chunks, 4970 pages.` — ready to use.
+4. Optionally enter steering guidance in the **Steering guidance** box.
+5. Click **Generate AI exam (70→50)**.
+
+The status bar will confirm guide grounding during and after generation, for example:  
+`Requesting 70 guide-grounded AI questions from OpenAI using 12 Cohesity User Guide chunks...`  
+`Generated using Cohesity User Guide grounding from 12 chunks.`
+
+Guide-grounding metadata is saved in the AI history entry so you can tell which sets were generated with guide grounding.
+
+#### How chunk retrieval works
+
+When guide mode is enabled and generation is triggered, the app:
+
+1. Scores all 1850 chunks using a deterministic lexical algorithm based on:
+   - Selected exam domains mapped to guide topic tags (e.g. DataProtect → `dataprotect`, `vmware`, `nutanix`).
+   - Steering text keywords matched against chunk `topics`, `keywords`, `headingPath`, and a preview of `text`.
+   - `questionTargets` (design, architecture, implementation-detail, troubleshooting, etc.) boosted when they overlap with common exam targets.
+   - Signals (`hasProcedure`, `hasCommand`, `hasLimitsOrValues`, `hasWarningsOrNotes`) boosted for detail-rich chunks.
+2. Selects the top-scoring chunks, capped at **12 chunks** and **~30,000 characters** of guide text to keep the OpenAI request manageable.
+3. Formats the selected chunks as a clearly delimited `<guide_context>` block within the prompt.
+
+The guide JSON (~12.5 MB) is loaded **once on demand** and cached in memory for the session. It is not re-parsed on every generation or keystroke.
+
+#### Fetch failure and manual file-picker fallback
+
+If the app is opened from a `file://` URL directly, browsers typically block `fetch()` requests to local files. When this happens, status text will explain the issue and a **Load JSON file manually** button will appear. Click it, select `cohesity-user-guide-knowledge.json` from your local drive, and the app will parse and cache the file in the browser.
+
+To avoid the fetch issue, serve the app from a static server or GitHub Pages instead.
+
+#### Combining steering text with guide grounding
+
+Steering text and guide grounding work together:
+
+- Steering terms are used **both** to retrieve relevant chunks and to guide the LLM's emphasis.
+- For example, `Make 40% of the questions about Nutanix backup` will retrieve guide chunks tagged with `nutanix` and `dataprotect` and also tell the LLM to emphasize that topic.
+- Guide and exam rules always take priority over steering guidance if there is a conflict.
+
+#### What the app sends to OpenAI
+
+Only the **selected relevant guide excerpts** (capped ~30,000 characters) are sent to OpenAI, not the full 12.5 MB file. The app does not upload any local files to any server; all chunk selection happens in the browser.
 
 ### Architect Expert product/topic scope emphasis
 - AI generation and the built-in bank are tuned toward the following Cohesity Architect Expert scope areas:
@@ -285,16 +338,17 @@ git add -f data/cohesity-user-guide-knowledge.json
 # Option B: remove the ignore rule from .gitignore first
 ```
 
-### How the output can later be used by `index.html` and LLM generation
+### How the output is used by `index.html` and LLM generation
 
-The JSON is designed for retrieval-grounded question generation:
+`cohesity-user-guide-knowledge.json` is already integrated into `index.html` via the **Guide-grounded generation** feature. See [Guide-grounded AI generation](#guide-grounded-ai-generation) above for full details.
 
-1. **Load the file** in the browser via `fetch('data/cohesity-user-guide-knowledge.json')` or embed it as a JS constant.
-2. **Select relevant chunks** based on the user's steering guidance (e.g. "More Nutanix backup questions") by filtering on `topics`, `keywords`, `chapter`, or `questionTargets`.
-3. **Send the selected chunk texts** to the LLM alongside the existing prompt so every generated question is grounded in the official user guide rather than relying solely on the model's memory.
-4. **Use `questionTargets`** (`architecture`, `design`, `implementation-detail`, `troubleshooting`, `security`, `operations`, `workload-protection`) to steer the mix of question types.
-5. **Use `difficultySignals`** / `signals` to prefer chunks that are rich in testable detail.
-6. **Use the inverted index** (if generated with the index option) for fast keyword-based chunk lookup in the browser.
+In brief, the app:
+
+1. **Loads the file** on demand via `fetch('cohesity-user-guide-knowledge.json')` (or the manual file picker fallback) and caches it in memory.
+2. **Selects relevant chunks** using a deterministic lexical scoring algorithm based on the user's steering guidance and selected exam domains, matching on `topics`, `keywords`, `headingPath`, and `questionTargets`.
+3. **Sends only the selected chunk texts** (~30,000 characters) to OpenAI alongside the existing exam prompt, grounding every generated question in the official user guide.
+4. **Uses `questionTargets`** (`architecture`, `design`, `implementation-detail`, `troubleshooting`, `security`, `operations`, `workload-protection`) to steer the mix of question types.
+5. **Uses `signals`** to prefer chunks that are rich in testable detail (procedures, commands, limits, warnings).
 
 This enables steering prompts like:
 - `More questions on installation` → retrieve chunks with `topics: ["implementation-detail"]`
