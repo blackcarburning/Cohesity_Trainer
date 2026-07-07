@@ -4293,8 +4293,7 @@ window.COHESITY_QUESTION_BANK =
           ...(selectedTopicLabels.length ? [
             'Selected Cohesity User Guide subjects for this generation:',
             ...selectedTopicLabels.map((label) => `- ${label}`),
-            'Generate questions ONLY from these selected guide subjects and from the provided <guide_context> excerpts.',
-            'Treat every unselected guide subject as out of bounds. Do not generate questions, explanations, or sourceGuideTopics from any unselected guide subject, even if it is closely related to a selected subject.',
+            'Generate questions ONLY from these selected guide subjects and the provided <guide_context> excerpts. Treat every unselected guide subject as out of bounds; do not generate questions, explanations, or sourceGuideTopics from any unselected subject, even if it is closely related.',
           ] : []),
           'Use the above Cohesity User Guide excerpts as the primary source-of-truth for product behaviour, feature boundaries, procedures, supportability, commands, warnings, and configuration details.',
           'CRITICAL: For every generated question, the correct answer MUST be directly supported by one or more of the Cohesity User Guide excerpts provided in <guide_context>. Do not make a correct answer rely on external Cohesity knowledge or unsupported inference outside the provided excerpts.',
@@ -5826,8 +5825,8 @@ window.COHESITY_QUESTION_BANK =
           }
           if (questionsWithFilteredGuideSourceMeta > 0) {
             warningMessage = warningMessage
-              ? `${warningMessage} ${questionsWithFilteredGuideSourceMeta} guide-grounded question${questionsWithFilteredGuideSourceMeta === 1 ? '' : 's'} included source metadata outside the selected guide subjects or retrieved chunk set; that metadata was filtered to the selected context.`
-              : `${questionsWithFilteredGuideSourceMeta} guide-grounded question${questionsWithFilteredGuideSourceMeta === 1 ? '' : 's'} included source metadata outside the selected guide subjects or retrieved chunk set; that metadata was filtered to the selected context.`;
+              ? `${warningMessage} ${questionsWithFilteredGuideSourceMeta} guide-grounded question${questionsWithFilteredGuideSourceMeta === 1 ? '' : 's'} included out-of-scope source metadata. It was filtered to the selected context.`
+              : `${questionsWithFilteredGuideSourceMeta} guide-grounded question${questionsWithFilteredGuideSourceMeta === 1 ? '' : 's'} included out-of-scope source metadata. It was filtered to the selected context.`;
           }
         } else if (guideGroundingEnabled) {
           statusMessage += ' (Guide mode enabled but no relevant chunks were found; generated without guide grounding.)';
