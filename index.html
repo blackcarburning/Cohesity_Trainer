@@ -3750,7 +3750,7 @@ window.COHESITY_QUESTION_BANK =
 
     function loadGuideTopicSelection(allTopicIds) {
       if (!Array.isArray(allTopicIds) || allTopicIds.length === 0) {
-        selectedGuideTopics = null;
+        selectedGuideTopics = null; // no topic taxonomy is available, so guide retrieval cannot be topic-filtered
         return;
       }
       const saved = lsGet(GUIDE_TOPICS_LS_KEY, null);
@@ -3836,6 +3836,8 @@ window.COHESITY_QUESTION_BANK =
 
     function syncSelectedGuideTopicsFromChecklist() {
       if (!guideTopicsChecklist || !hasGuideTopicsAvailable()) return;
+      // When topics exist, a null selection means "treat the current guide topic universe as initially selected"
+      // until the checklist state is synced for the first time.
       const nextSelection = new Set(selectedGuideTopics === null ? guideTopicAllIdsCache : selectedGuideTopics);
       guideTopicsChecklist.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
         if (cb.checked) nextSelection.add(cb.dataset.topicId);
@@ -3847,6 +3849,8 @@ window.COHESITY_QUESTION_BANK =
     }
 
     function getActiveSelectedGuideTopics() {
+      // Returns null only when the loaded guide has no topic taxonomy. Otherwise returns the current selection Set,
+      // which may be empty and should block guide-grounded generation.
       if (!hasGuideTopicsAvailable()) return null;
       syncSelectedGuideTopicsFromChecklist();
       return selectedGuideTopics ? new Set(selectedGuideTopics) : new Set();
@@ -4069,7 +4073,7 @@ window.COHESITY_QUESTION_BANK =
         const heading = Array.isArray(chunk.headingPath) && chunk.headingPath.length
           ? chunk.headingPath.join(' > ')
           : '';
-        const title = chunk.title || heading;
+        const title = chunk.title || heading || 'Untitled excerpt';
         const topicStr = topics ? ` | Topics: ${topics}` : '';
         const titleStr = title ? ` | Title: ${title}` : '';
         const headingStr = heading && heading !== title ? ` | Heading: ${heading}` : '';

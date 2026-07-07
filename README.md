@@ -90,7 +90,7 @@ Each topic shows a readable label and the number of chunks tagged with it (e.g. 
 - **Filter box** — type to search topic names if the list is long.
 - Your selection is saved in `localStorage` under the key `cohesity_trainer_guide_selected_topics` and restored automatically when the guide is next loaded. Only topics that still exist in the loaded guide are restored; if no saved selection exists, all topics are selected by default.
 
-Selected topics are not display-only: they define the eligible guide-subject pool for guide-grounded generation. The app first filters chunks to those whose `topics` overlap the checked subjects, then uses domains and steering text only to refine ranking **within that selected-subject pool**.
+Selected topics actively control the eligible guide-subject pool for guide-grounded generation. The app first filters chunks to those whose `topics` overlap the checked subjects, then uses domains and steering text only to refine ranking **within that selected-subject pool**.
 
 If nothing is checked, generation is blocked with:
 
