@@ -3776,7 +3776,7 @@ window.COHESITY_QUESTION_BANK =
     function sanitizeSteeringPrompt(raw) {
       if (typeof raw !== 'string') return '';
       let prompt = raw
-        // Remove most control chars and DEL; tabs/newlines are normalized by trim/slice flow.
+        // Remove most control characters and DEL; tabs/newlines are normalized by trim/slice flow.
         .replace(/[\u0000-\u0008\u000B-\u001F\u007F]/g, ' ')
         // Remove invisible and formatting-only Unicode characters.
         .replace(/[\u00AD\u00A0\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/g, '')

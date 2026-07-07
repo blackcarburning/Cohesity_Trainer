@@ -106,7 +106,7 @@ Open `index.html` in a browser to use the Cohesity Certified Architect Expert pr
 
 ### API key and model memory
 - Your OpenAI API key and selected model are saved in browser local storage so they persist across page reloads.
-- The optional AI generation steering text is also saved in local storage for reuse after refresh.
+- The optional AI generation steering text is also saved in browser local storage for reuse after refresh.
 - ⚠️ **Security warning:** Storing your API key in local storage is convenient but less secure on shared or public machines. Anyone with access to DevTools on the same machine/browser profile can read it. Use the **Forget saved API key** button to remove it when done, especially on shared devices.
 - The **Forget saved API key** button clears the key from local storage and from the input field immediately.
 - API keys are **sanitized before use and before saving**: leading/trailing whitespace, wrapping quotes, hidden zero-width characters, and internal newlines are stripped automatically. The sanitized value is saved back to local storage.
