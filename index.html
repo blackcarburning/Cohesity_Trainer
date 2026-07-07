@@ -3822,7 +3822,7 @@ window.COHESITY_QUESTION_BANK =
 
     function updateGuideTopicsWarning() {
       if (!guideTopicsWarning) return;
-      if (guideTopicAllIdsCache && guideTopicAllIdsCache.length > 0 && selectedGuideTopics && selectedGuideTopics.size === 0) {
+      if (hasGuideTopicsAvailable() && selectedGuideTopics && selectedGuideTopics.size === 0) {
         guideTopicsWarning.textContent = 'No guide topics selected. Select at least one guide subject before generating guide-grounded questions.';
         guideTopicsWarning.style.display = '';
       } else {
@@ -3830,9 +3830,13 @@ window.COHESITY_QUESTION_BANK =
       }
     }
 
+    function hasGuideTopicsAvailable() {
+      return !!(guideTopicAllIdsCache && guideTopicAllIdsCache.length > 0);
+    }
+
     function syncSelectedGuideTopicsFromChecklist() {
-      if (!guideTopicsChecklist || !guideTopicAllIdsCache || guideTopicAllIdsCache.length === 0) return;
-      const nextSelection = new Set(selectedGuideTopics || guideTopicAllIdsCache);
+      if (!guideTopicsChecklist || !hasGuideTopicsAvailable()) return;
+      const nextSelection = new Set(selectedGuideTopics === null ? guideTopicAllIdsCache : selectedGuideTopics);
       guideTopicsChecklist.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
         if (cb.checked) nextSelection.add(cb.dataset.topicId);
         else nextSelection.delete(cb.dataset.topicId);
@@ -3843,13 +3847,13 @@ window.COHESITY_QUESTION_BANK =
     }
 
     function getActiveSelectedGuideTopics() {
-      if (!guideTopicAllIdsCache || guideTopicAllIdsCache.length === 0) return null;
+      if (!hasGuideTopicsAvailable()) return null;
       syncSelectedGuideTopicsFromChecklist();
       return selectedGuideTopics ? new Set(selectedGuideTopics) : new Set();
     }
 
     function applyGuideTopicsBulk(action) {
-      if (!guideTopicAllIdsCache || guideTopicAllIdsCache.length === 0) return;
+      if (!hasGuideTopicsAvailable()) return;
       if (action === 'all') {
         selectedGuideTopics = new Set(guideTopicAllIdsCache);
       } else if (action === 'none') {
@@ -4062,12 +4066,11 @@ window.COHESITY_QUESTION_BANK =
           ? `Page ${chunk.pageStart}`
           : `Pages ${chunk.pageStart}-${chunk.pageEnd}`;
         const topics = Array.isArray(chunk.topics) ? chunk.topics.join(', ') : '';
-        const title = chunk.title || (Array.isArray(chunk.headingPath) && chunk.headingPath.length
-          ? chunk.headingPath.join(' > ')
-          : '');
-        const heading = Array.isArray(chunk.headingPath) && chunk.headingPath.length
+        const headingPathStr = Array.isArray(chunk.headingPath) && chunk.headingPath.length
           ? chunk.headingPath.join(' > ')
           : '';
+        const title = chunk.title || headingPathStr;
+        const heading = headingPathStr;
         const topicStr = topics ? ` | Topics: ${topics}` : '';
         const titleStr = title ? ` | Title: ${title}` : '';
         const headingStr = heading && heading !== title ? ` | Heading: ${heading}` : '';
@@ -5397,7 +5400,7 @@ window.COHESITY_QUESTION_BANK =
         ? [...activeSelectedTopics]
         : null;
       const selectedTopicLabels = selectedTopicTags
-        ? [...activeSelectedTopics].map((t) => GUIDE_TOPIC_LABELS[t] || t)
+        ? selectedTopicTags.map((t) => GUIDE_TOPIC_LABELS[t] || t)
         : null;
       const selectedSubjectSummary = selectedTopicLabels
         ? (selectedTopicLabels.length > 5
@@ -5597,7 +5600,7 @@ window.COHESITY_QUESTION_BANK =
               guideContextPages: guideChunks.map((c) => c.pageStart === c.pageEnd ? String(c.pageStart) : `${c.pageStart}-${c.pageEnd}`),
               guideContextChunkCount: chunkCount,
               guideContextTopics: [...new Set(guideChunks.flatMap((c) => Array.isArray(c.topics) ? c.topics : []))],
-              ...(selectedTopicTags ? { guideSelectedTopics: selectedTopicTags, guideSelectedTopicLabels: selectedTopicLabels } : {}),
+              ...(selectedTopicTags && selectedTopicLabels ? { guideSelectedTopics: selectedTopicTags, guideSelectedTopicLabels: selectedTopicLabels } : {}),
               ...(guideRetrievalDiagnostics ? { guideRetrievalDiagnostics } : {}),
               questionsWithExactSourceMeta,
               questionsWithFallbackSourceMeta,
