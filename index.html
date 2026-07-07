@@ -402,7 +402,7 @@
               <input type="checkbox" id="useGuideKnowledgeCheckbox">
               <span>Use Cohesity User Guide knowledge</span>
             </label>
-            <p id="guideKnowledgeStatus" class="help" aria-live="polite" style="margin-top:6px;">Guide knowledge not loaded.</p>
+            <p id="guideKnowledgeStatus" class="help" aria-live="polite" style="margin-top:6px;">Load Cohesity User Guide knowledge to choose subjects.</p>
             <input type="file" id="guideKnowledgeFileInput" accept=".json" style="display:none;" aria-label="Load guide knowledge JSON file manually">
             <button id="loadGuideManuallyButton" type="button" class="ghost" style="display:none;margin-top:6px;" aria-label="Select guide knowledge JSON file">Load JSON file manually</button>
             <details id="guideTopicsDetails" style="display:none;margin-top:10px;">
@@ -3798,6 +3798,21 @@ window.COHESITY_QUESTION_BANK =
       loadGuideTopicSelection(allIds);
       renderGuideTopicsChecklist('');
       if (guideTopicsDetails) guideTopicsDetails.style.display = '';
+
+      // Update status with chunk count and number of unique subjects discovered
+      const chunkCount = (guideKnowledgeData.chunks || []).length;
+      const subjectCount = allIds.length;
+      if (subjectCount === 0) {
+        setGuideStatus(
+          `Loaded ${chunkCount} guide chunk${chunkCount === 1 ? '' : 's'}. Warning: no topics found in guide data — all chunks will be used for retrieval.`,
+          true
+        );
+      } else {
+        setGuideStatus(
+          `Loaded ${chunkCount} guide chunk${chunkCount === 1 ? '' : 's'}. ${subjectCount} subject${subjectCount === 1 ? '' : 's'} available.`
+        );
+      }
+
       updateGuideTopicsWarning();
     }
 

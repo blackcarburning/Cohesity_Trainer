@@ -64,8 +64,8 @@ Guide-grounded mode uses the parsed guide as source-of-truth: the AI is explicit
 2. Tick **Use Cohesity User Guide knowledge** in the **Guide-grounded generation** section (below the steering box).
 3. Status text will update:
    - `Loading guide knowledge…` — the app is fetching the JSON file.
-   - `Loaded Cohesity User Guide knowledge: 1850 chunks, 4970 pages.` — ready to use (exact numbers depend on the version of the guide JSON).
-4. A **Guide topics / weighting** panel appears. Select which guide topics should be eligible for generation (see below).
+   - `Loaded N guide chunks. Y subjects available.` — ready to use; exact numbers depend on the version of the guide JSON.
+4. A **Guide topics / weighting** panel appears automatically. Select which guide topics should be eligible for generation (see below).
 5. Optionally enter steering guidance in the **Steering guidance** box.
 6. Click **Generate AI exam (70→50)**.
 
@@ -79,14 +79,16 @@ Guide-grounding metadata is saved in the AI history entry so you can tell which 
 
 #### Guide topics checklist
 
-After the guide JSON loads, a collapsible **Guide topics / weighting** panel appears. It lists all guide topics with chunk counts, derived from `chunks[].topics` in the guide JSON (e.g. `dataprotect: 1507`).
+After the guide JSON loads, a collapsible **Guide topics / weighting** panel appears automatically. The topic list is **generated dynamically** from the loaded guide data — specifically from the unique values of `chunks[].topics` across all guide chunks. No topics are hard-coded in the checklist; if the guide is updated, the checklist reflects the new topic set on the next load.
+
+Each topic shows a readable label and the number of chunks tagged with it (e.g. `DataProtect (1507)`). Topics are listed in order of chunk count so the most-covered subjects appear first.
 
 - **Check/uncheck** topics to include or exclude them from retrieval. Only checked topics are eligible for chunk retrieval.
-- **Select all** — enable every topic.
+- **Select all** — enable every dynamically discovered topic.
 - **Clear all** — disable every topic (generation is blocked when no topics are selected, with a warning).
 - **Core exam topics** — select the recommended subset aligned to the Cohesity Architect Expert exam scope.
 - **Filter box** — type to search topic names if the list is long.
-- Your selection is saved in `localStorage` under the key `cohesity_trainer_guide_selected_topics` and restored on reload.
+- Your selection is saved in `localStorage` under the key `cohesity_trainer_guide_selected_topics` and restored automatically when the guide is next loaded. Only topics that still exist in the loaded guide are restored; if no saved selection exists, all topics are selected by default.
 
 Selected topics **strongly boost** chunks matching those topic tags during retrieval. If no chunks are found after filtering, generation shows a clear message instead of proceeding empty.
 
