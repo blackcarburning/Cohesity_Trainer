@@ -146,7 +146,7 @@ function computeDifficultySignals(text) {
   if (/\bwarn(ing)?\b|\bnote\b|\bcaution\b|\bimportant\b/i.test(text))  signals.push('has-warnings-or-notes');
   if (/\$ |iris_cli|cohesity_cli|^\s{4}/m.test(text))                   signals.push('has-command');
   if (/\|.*\|/m.test(text))                                              signals.push('has-table');
-  if (/^\d+\.|^- |^l  /m.test(text))                                    signals.push('has-procedure');
+  if (/^\d+\.|^- |^\* |^•/m.test(text))                                  signals.push('has-procedure');
   return signals;
 }
 
@@ -176,8 +176,8 @@ function extractKeywords(text, headingPath) {
     if (combined.includes(term.toLowerCase())) found.add(term);
   }
 
-  // Extract capitalized words / product names (likely proper nouns)
-  const properNouns = combined.match(/\b[A-Z][a-z]{2,}\b/g) || [];
+  // Extract capitalized words / product names (likely proper nouns) from original text
+  const properNouns = [text, ...headingPath].join(' ').match(/\b[A-Z][a-z]{2,}\b/g) || [];
   for (const w of properNouns) {
     if (w.length > 3 && !['This','That','The','And','For','With','From','When','Where','Which','How','What'].includes(w)) {
       found.add(w.toLowerCase());
