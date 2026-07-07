@@ -159,6 +159,126 @@ Open `index.html` in a browser to use the Cohesity Certified Architect Expert pr
 - Frontier model IDs (`gpt-5.x`) reflect current OpenAI naming at time of writing. Use the **Refresh available models** button to load the exact IDs available on your key.
 - Per-question LLM explanations and ad hoc lookups are study assistance tools. Always verify exam-critical facts against official Cohesity documentation.
 
+## Cohesity User Guide parser
+
+The repository includes `74_UserGuide_extracted.md`, a full extraction of the
+Cohesity User Guide 7.4 (PDF pages 1–4970, ~8 MB of markdown). The parser
+script reads this file and produces a structured JSON knowledge base suitable
+for later loading by `index.html` via `fetch()` or embedding as a JS constant.
+
+### Requirements
+
+Node.js 18 or later (no external npm dependencies — only Node built-ins are used).
+
+### Running the parser
+
+Run from the **repository root**:
+
+```bash
+# Default settings (6000-char chunks, 600-char overlap, pretty JSON output)
+node scripts/parse-user-guide.js
+
+# Compact output (smaller file, useful for production embedding)
+node scripts/parse-user-guide.js --minify
+
+# Custom chunk size and overlap
+node scripts/parse-user-guide.js \
+  --input 74_UserGuide_extracted.md \
+  --output data/cohesity-user-guide-knowledge.json \
+  --max-chunk-chars 6000 \
+  --overlap-chars 600
+
+# Include a full inverted index in the output (increases file size)
+node scripts/parse-user-guide.js --index
+
+# Write one JSON object per line (JSONL format)
+node scripts/parse-user-guide.js --jsonl --output data/cohesity-user-guide-knowledge.jsonl
+```
+
+All options:
+
+| Option | Default | Description |
+|---|---|---|
+| `--input <path>` | `74_UserGuide_extracted.md` | Input markdown file |
+| `--output <path>` | `data/cohesity-user-guide-knowledge.json` | Output file |
+| `--max-chunk-chars N` | `6000` | Maximum characters per chunk |
+| `--overlap-chars N` | `600` | Overlap between consecutive chunks |
+| `--minify` | off | Write compact JSON (no indentation) |
+| `--index` | off | Include full `invertedIndex` in output |
+| `--jsonl` | off | Write JSONL (one JSON object per line) |
+
+### Expected output
+
+The script produces a single JSON (or JSONL) file. With default settings and the
+full user guide the output is approximately **14–20 MB** (pretty) or **14 MB** (minified).
+
+The top-level structure is:
+
+```json
+{
+  "schemaVersion": 1,
+  "source": { "file": "...", "title": "...", "version": "7.4", "pdfPages": 4970 },
+  "generatedAt": "...",
+  "chunking": { "strategy": "page-and-heading-aware", "maxChunkChars": 6000, "overlapChars": 600 },
+  "stats": { "chunks": 1850, "characters": 9307961, "pages": 4970, "keywords": 432, "topics": {} },
+  "toc": [ { "title": "Chapter 4: Cluster Administration", "page": 227, "level": 1 } ],
+  "chunks": [
+    {
+      "id": "ug-000001",
+      "title": "Chapter 4: Cluster Administration / Cohesity Cluster Services",
+      "chapter": "Chapter 4: Cluster Administration",
+      "headingPath": ["Chapter 4: Cluster Administration", "Cohesity Cluster Services"],
+      "pageStart": 254,
+      "pageEnd": 256,
+      "lineStart": 12345,
+      "lineEnd": 12480,
+      "text": "...full chunk text...",
+      "keywords": ["cluster", "services", "health check"],
+      "topics": ["cluster-administration", "services", "implementation-detail"],
+      "questionTargets": ["implementation-detail", "troubleshooting"],
+      "difficultySignals": ["has-procedure", "has-command"],
+      "hasProcedure": true,
+      "hasTable": false,
+      "hasCommand": true,
+      "hasLimitsOrValues": false,
+      "hasWarningsOrNotes": false,
+      "searchText": "normalized lower-case text for browser search"
+    }
+  ]
+}
+```
+
+### Note on file size and `.gitignore`
+
+The generated output file is **intentionally excluded from the repository** by
+`.gitignore` (see the `data/` entries). This keeps the PR small since the file
+can be regenerated locally at any time.
+
+To commit the generated output when you are ready to upload it:
+
+```bash
+# Option A: force-add a single file
+git add -f data/cohesity-user-guide-knowledge.json
+
+# Option B: remove the ignore rule from .gitignore first
+```
+
+### How the output can later be used by `index.html` and LLM generation
+
+The JSON is designed for retrieval-grounded question generation:
+
+1. **Load the file** in the browser via `fetch('data/cohesity-user-guide-knowledge.json')` or embed it as a JS constant.
+2. **Select relevant chunks** based on the user's steering guidance (e.g. "More Nutanix backup questions") by filtering on `topics`, `keywords`, `chapter`, or `questionTargets`.
+3. **Send the selected chunk texts** to the LLM alongside the existing prompt so every generated question is grounded in the official user guide rather than relying solely on the model's memory.
+4. **Use `questionTargets`** (`architecture`, `design`, `implementation-detail`, `troubleshooting`, `security`, `operations`, `workload-protection`) to steer the mix of question types.
+5. **Use `difficultySignals`** (`has-procedure`, `has-table`, `has-command`, `has-limits-or-values`, `has-warnings-or-notes`) to prefer chunks that are rich in testable detail.
+6. **Use the inverted index** (if generated with `--index`) for fast keyword-based chunk lookup in the browser.
+
+This enables steering prompts like:
+- `More questions on installation` → retrieve chunks with `topics: ["implementation-detail"]`
+- `Make the questions more design focused` → retrieve chunks with `questionTargets: ["design", "architecture"]`
+- `Make 40% of the questions about Nutanix backup` → retrieve chunks with `topics: ["nutanix", "dataprotect"]`
+
 ## Troubleshooting
 
 ### Built-in generation does nothing

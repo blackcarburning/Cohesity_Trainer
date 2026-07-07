@@ -1,0 +1,18 @@
+# Generated parser output
+# The parse-user-guide.js script produces a large JSON file (~15–25 MB).
+# It is intentionally excluded from the repository by default so it is not
+# accidentally committed. The user should run the parser locally and then
+# either:
+#   a) remove or override this rule (comment out or delete the line below)
+#      and commit the generated file when they are ready to upload it, or
+#   b) host the file separately and reference it via URL in index.html.
+#
+# To commit the generated output, simply remove the matching line(s) below
+# or add a forced-include rule in your own .git/info/exclude or local config:
+#   git add -f data/cohesity-user-guide-knowledge.json
+data/cohesity-user-guide-knowledge.json
+data/cohesity-user-guide-knowledge.jsonl
+
+# Temporary/scratch outputs from the parser (always ignored)
+data/*.tmp.json
+data/*.tmp.jsonl
