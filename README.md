@@ -56,6 +56,8 @@ Open `index.html` in a browser to use the Cohesity Certified Architect Expert pr
 
 When `cohesity-user-guide-knowledge.json` is present in the same directory as `index.html`, you can enable **guide-grounded generation** to produce more accurate, harder questions grounded in the official Cohesity User Guide 7.4.
 
+Guide-grounded mode uses the parsed guide as source-of-truth: the AI is explicitly instructed that **every correct answer must be directly supported by the supplied guide excerpts**, not by general product knowledge. Distractors may be plausible but must not contradict guide facts.
+
 #### Enabling guide-grounded mode
 
 1. Enter your OpenAI API key in the right panel.
@@ -63,20 +65,37 @@ When `cohesity-user-guide-knowledge.json` is present in the same directory as `i
 3. Status text will update:
    - `Loading guide knowledge…` — the app is fetching the JSON file.
    - `Loaded Cohesity User Guide knowledge: 1850 chunks, 4970 pages.` — ready to use (exact numbers depend on the version of the guide JSON).
-4. Optionally enter steering guidance in the **Steering guidance** box.
-5. Click **Generate AI exam (70→50)**.
+4. A **Guide subjects / weighting** panel appears. Select which guide topics should be eligible for generation (see below).
+5. Optionally enter steering guidance in the **Steering guidance** box.
+6. Click **Generate AI exam (70→50)**.
 
-The status bar will confirm guide grounding during and after generation, for example:  
-`Requesting 70 guide-grounded AI questions from OpenAI using 12 Cohesity User Guide chunks...`  
-`Generated using Cohesity User Guide grounding from 12 chunks.`
+The status bar will confirm guide grounding during and after generation, for example:
+```
+Requesting 70 guide-grounded AI questions from OpenAI using 12 guide chunks across selected subjects: DataProtect, VMware, Nutanix — correct answers must be supported by the guide excerpts.
+Generated using Cohesity User Guide grounding from 12 chunks (subjects: DataProtect, VMware, Nutanix).
+```
 
 Guide-grounding metadata is saved in the AI history entry so you can tell which sets were generated with guide grounding.
+
+#### Guide subjects / topic checklist
+
+After the guide JSON loads, a collapsible **Guide subjects / weighting** panel appears. It lists all guide topics with chunk counts, derived from `chunks[].topics` in the guide JSON (e.g. `dataprotect: 1507`).
+
+- **Check/uncheck** subjects to include or exclude them from retrieval. Only checked subjects are eligible for chunk retrieval.
+- **Select all** — enable every subject.
+- **Clear all** — disable every subject (generation is blocked when no subjects are selected, with a warning).
+- **Core exam topics** — select the recommended subset aligned to the Cohesity Architect Expert exam scope.
+- **Filter box** — type to search topic names if the list is long.
+- Your selection is saved in `localStorage` under the key `cohesity_trainer_guide_selected_topics` and restored on reload.
+
+Selected subjects **strongly boost** chunks matching those topic tags during retrieval. If no chunks are found after filtering, generation shows a clear message instead of proceeding empty.
 
 #### How chunk retrieval works
 
 When guide mode is enabled and generation is triggered, the app:
 
 1. Scores all 1850 chunks using a deterministic lexical algorithm based on:
+   - **Selected guide subjects** — chunks whose `topics` overlap with the checklist selection receive a very strong boost (+20 per matching topic). When subjects are selected, retrieval preferentially returns chunks from those topics.
    - Selected exam domains mapped to guide topic tags (e.g. DataProtect → `dataprotect`, `vmware`, `nutanix`).
    - Steering text keywords matched against chunk `topics`, `keywords`, `headingPath`, and a preview of `text`.
    - `questionTargets` (design, architecture, implementation-detail, troubleshooting, etc.) boosted when they overlap with common exam targets.
@@ -85,6 +104,21 @@ When guide mode is enabled and generation is triggered, the app:
 3. Formats the selected chunks as a clearly delimited `<guide_context>` block within the prompt.
 
 The guide JSON (~12.5 MB) is loaded **once on demand** and cached in memory for the session. It is not re-parsed on every generation or keystroke.
+
+#### Correct answers must be guide-supported
+
+In guide-grounded mode the prompt instructs the LLM:
+
+- Every correct answer **must** be directly supported by one or more of the supplied guide excerpts.
+- If the excerpts do not contain enough information for a question, the LLM should not generate that question.
+- Distractors may be plausible but must not contradict facts stated in the excerpts.
+- The LLM is also asked to include per-question source metadata (`sourceGuideChunkIds`, `sourceGuidePages`, `sourceGuideTopics`) where possible.
+
+After generation the app validates source metadata. If the LLM omits per-question source fields, generation-level fallback metadata (chunk IDs, pages, and topics from the context window) is attached to each question automatically, and a warning is shown:
+
+> _Some guide-grounded questions did not include exact source chunk metadata; generation-level guide context metadata was preserved instead._
+
+This metadata is saved/exported with the question set for traceability.
 
 #### Fetch failure and manual file-picker fallback
 
@@ -98,11 +132,29 @@ Steering text and guide grounding work together:
 
 - Steering terms are used **both** to retrieve relevant chunks and to guide the LLM's emphasis.
 - For example, `Make 40% of the questions about Nutanix backup` will retrieve guide chunks tagged with `nutanix` and `dataprotect` and also tell the LLM to emphasize that topic.
+- Selected subjects from the checklist are also communicated to the LLM in the prompt, reinforcing emphasis.
 - Guide and exam rules always take priority over steering guidance if there is a conflict.
 
 #### What the app sends to OpenAI
 
 Only the **selected relevant guide excerpts** (capped ~30,000 characters) are sent to OpenAI, not the full 12.5 MB file. The app does not upload any local files to any server; all chunk selection happens in the browser.
+
+#### Guide metadata in saved/exported sets
+
+AI-generated question sets saved or exported with guide grounding include:
+
+| Field | Description |
+|---|---|
+| `guideGrounded` | `true` when guide context was used |
+| `guideSourceFile` | Name of the guide JSON file used |
+| `guideContextChunkIds` | IDs of guide chunks included in the prompt |
+| `guideContextPages` | Page ranges of those chunks |
+| `guideContextTopics` | Unique guide topics across the prompt chunks |
+| `guideSelectedTopics` | Topics selected in the checklist at generation time |
+| `questionsWithExactSourceMeta` | Number of questions where the LLM provided per-question source fields |
+| `questionsWithFallbackSourceMeta` | Number of questions where generation-level fallback metadata was applied |
+
+Import/export of saved question sets is backward compatible with older sets that do not include these fields.
 
 ### Architect Expert product/topic scope emphasis
 - AI generation and the built-in bank are tuned toward the following Cohesity Architect Expert scope areas:
