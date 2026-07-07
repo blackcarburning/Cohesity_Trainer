@@ -22,7 +22,6 @@ Open `index.html` in a browser to use the Cohesity Certified Architect Expert pr
 - OpenAI API key and selected model are remembered in local storage for convenience.
 - Export your configuration (model, domains, timer, history metadata, and full saved question sets including AI-generated ones) to a JSON file for backup or sharing.
 - Import a previously exported configuration file to restore AI-generated question sets into browser history so they appear in the saved-set dropdown immediately.
-- Import restores saved question sets/history data; it does not overwrite your current in-page steering text.
 - Question bank & memory stats panel shows built-in bank count, current exam info, and saved history totals.
 
 ### AI exam generation
@@ -130,6 +129,7 @@ Open `index.html` in a browser to use the Cohesity Certified Architect Expert pr
 - Click **Import configuration** and select a `.json` file previously exported by this app.
 - The import reads the file entirely in the browser — no data is sent to any server.
 - **API keys are never imported**, even if an exported file somehow contained one.
+- Import restores saved question sets/history data; it does not overwrite your current in-page steering text.
 - Valid saved question sets from the file are merged into your existing browser history. Existing sets are not erased.
 - Duplicate sets (matched by their unique `id`) are skipped automatically to prevent double-importing.
 - Malformed question sets are skipped with a warning; the rest of the import continues.
