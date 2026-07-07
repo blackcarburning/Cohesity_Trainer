@@ -62,7 +62,7 @@ When `cohesity-user-guide-knowledge.json` is present in the same directory as `i
 2. Tick **Use Cohesity User Guide knowledge** in the **Guide-grounded generation** section (below the steering box).
 3. Status text will update:
    - `Loading guide knowledge…` — the app is fetching the JSON file.
-   - `Loaded Cohesity User Guide knowledge: 1850 chunks, 4970 pages.` — ready to use.
+   - `Loaded Cohesity User Guide knowledge: 1850 chunks, 4970 pages.` — ready to use (exact numbers depend on the version of the guide JSON).
 4. Optionally enter steering guidance in the **Steering guidance** box.
 5. Click **Generate AI exam (70→50)**.
 

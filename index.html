@@ -3537,6 +3537,7 @@ window.COHESITY_QUESTION_BANK =
     const GUIDE_KNOWLEDGE_FILE = 'cohesity-user-guide-knowledge.json';
     const GUIDE_MAX_CHUNKS = 12;             // max chunks to include in prompt
     const GUIDE_MAX_CONTEXT_CHARS = 30000;   // max total chars of guide text in prompt
+    const GUIDE_CHUNK_PREVIEW_CHARS = 800;   // chars of chunk text scanned for keyword matching
     const EXAM_SCOPE_TOPICS = [
       'Align Cohesity technical solutions with business problems, including identifying gaps in an existing protection strategy',
       'Cohesity Data Cloud',
@@ -3774,8 +3775,8 @@ window.COHESITY_QUESTION_BANK =
         terms.forEach((term) => {
           if (chunkKeywords.some((kw) => kw.includes(term) || term.includes(kw))) score += 3;
           if (chunkTitle.includes(term)) score += 2;
-          // text match: scan a preview of the text (first 800 chars) to avoid scanning huge strings per keystroke
-          if (chunkText.slice(0, 800).includes(term)) score += 1;
+          // text match: scan a preview of the text to avoid scanning huge strings per term
+          if (chunkText.slice(0, GUIDE_CHUNK_PREVIEW_CHARS).includes(term)) score += 1;
         });
 
         // questionTargets boost
@@ -3793,20 +3794,21 @@ window.COHESITY_QUESTION_BANK =
         return { chunk, score };
       });
 
-      // Sort descending by score, then by chunk index for determinism
-      scored.sort((a, b) => b.score - a.score || 0);
+      // Sort descending by score, then by chunk id for determinism when scores are equal
+      scored.sort((a, b) => b.score - a.score || (a.chunk.id < b.chunk.id ? -1 : a.chunk.id > b.chunk.id ? 1 : 0));
 
       // Filter out zero-score chunks if we have enough high-scoring ones
       const relevant = scored.filter((s) => s.score > 0);
       const pool = relevant.length >= GUIDE_MAX_CHUNKS ? relevant : scored;
 
-      // Select top chunks, capped by char budget
+      // Select top chunks, capped by char budget. The first chunk is always included
+      // regardless of size so we always provide at least one guide excerpt.
       const selected = [];
       let totalChars = 0;
       for (const { chunk } of pool) {
         if (selected.length >= GUIDE_MAX_CHUNKS) break;
         const textLen = (chunk.text || '').length;
-        if (totalChars + textLen > GUIDE_MAX_CONTEXT_CHARS && selected.length > 0) continue;
+        if (selected.length > 0 && totalChars + textLen > GUIDE_MAX_CONTEXT_CHARS) continue;
         selected.push(chunk);
         totalChars += textLen;
       }
@@ -5089,6 +5091,7 @@ window.COHESITY_QUESTION_BANK =
       saveSteeringPrompt();
 
       // ── Guide-grounded mode ───────────────────────────────────────────────
+      const selectedDomains = getSelectedDomains();
       const guideGroundingEnabled = useGuideKnowledgeCheckbox.checked;
       let guideChunks = [];
       let guideContext = '';
@@ -5106,7 +5109,6 @@ window.COHESITY_QUESTION_BANK =
             return;
           }
         }
-        const selectedDomains = getSelectedDomains();
         guideChunks = retrieveGuideChunks(selectedDomains, steeringPrompt);
         if (guideChunks.length > 0) {
           guideContext = buildGuideContextString(guideChunks);
@@ -5126,7 +5128,6 @@ window.COHESITY_QUESTION_BANK =
         : baseStatusPrefix;
 
       try {
-        const selectedDomains = getSelectedDomains();
         const { payload, usedDefaultTemperature: examUsedDefaultTemperature } =
           await openAIChatWithTemperatureFallback(apiKey, {
             model,
