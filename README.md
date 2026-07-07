@@ -71,8 +71,8 @@ Guide-grounded mode uses the parsed guide as source-of-truth: the AI is explicit
 
 The status bar will confirm guide grounding during and after generation, for example:
 ```
-Requesting 70 guide-grounded AI questions from OpenAI using 12 guide chunks across selected topics: DataProtect, VMware, Nutanix — correct answers must be supported by the guide excerpts.
-Generated using Cohesity User Guide grounding from 12 chunks (topics: DataProtect, VMware, Nutanix).
+Generating 70 guide-grounded AI questions using 12 chunks from selected subjects: DataProtect, VMware, Nutanix (selected subjects: 3; candidate chunks after topic filtering: 148; chunks sent to the LLM: 12) — correct answers must be supported by the guide excerpts.
+Generated using Cohesity User Guide grounding from 12 chunks (selected subjects: DataProtect, VMware, Nutanix). Selected subjects: 3; candidate chunks after topic filtering: 148; chunks sent to the LLM: 12.
 ```
 
 Guide-grounding metadata is saved in the AI history entry so you can tell which sets were generated with guide grounding.
@@ -90,20 +90,29 @@ Each topic shows a readable label and the number of chunks tagged with it (e.g. 
 - **Filter box** — type to search topic names if the list is long.
 - Your selection is saved in `localStorage` under the key `cohesity_trainer_guide_selected_topics` and restored automatically when the guide is next loaded. Only topics that still exist in the loaded guide are restored; if no saved selection exists, all topics are selected by default.
 
-Selected topics **strongly boost** chunks matching those topic tags during retrieval. If no chunks are found after filtering, generation shows a clear message instead of proceeding empty.
+Selected topics are not display-only: they define the eligible guide-subject pool for guide-grounded generation. The app first filters chunks to those whose `topics` overlap the checked subjects, then uses domains and steering text only to refine ranking **within that selected-subject pool**.
+
+If nothing is checked, generation is blocked with:
+
+> `Select at least one guide subject before generating guide-grounded questions.`
+
+If the selected subjects do not match any chunks, the app warns instead of silently falling back to unrelated topics:
+
+> `No guide chunks found for the selected subjects. Select more subjects or broaden the selection.`
 
 #### How chunk retrieval works
 
 When guide mode is enabled and generation is triggered, the app:
 
-1. Scores all 1850 chunks using a deterministic lexical algorithm based on:
-   - **Selected guide topics** — chunks whose `topics` overlap with the checklist selection receive a very strong boost (+20 per matching topic). When topics are selected, retrieval preferentially returns chunks from those topics.
+1. Filters the guide to chunks whose `topics` overlap the selected checklist subjects. Unselected subjects are not eligible for guide-grounded retrieval.
+2. Scores only that filtered candidate pool using a deterministic lexical algorithm based on:
    - Selected exam domains mapped to guide topic tags (e.g. DataProtect → `dataprotect`, `vmware`, `nutanix`).
    - Steering text keywords matched against chunk `topics`, `keywords`, `headingPath`, and a preview of `text`.
    - `questionTargets` (design, architecture, implementation-detail, troubleshooting, etc.) boosted when they overlap with common exam targets.
    - Signals (`hasProcedure`, `hasCommand`, `hasLimitsOrValues`, `hasWarningsOrNotes`) boosted for detail-rich chunks.
-2. Selects the top-scoring chunks, capped at **12 chunks** and **~30,000 characters** of guide text to keep the OpenAI request manageable.
-3. Formats the selected chunks as a clearly delimited `<guide_context>` block within the prompt.
+3. Selects the top-scoring chunks from that selected-subject pool, capped at **12 chunks** and **~30,000 characters** of guide text to keep the OpenAI request manageable.
+4. If ranking signals are weak, it still fills the context budget from the selected-subject pool rather than silently pulling unrelated topics.
+5. Formats the selected chunks as a clearly delimited `<guide_context>` block within the prompt, with metadata such as chunk ID, page range, topics, and title for each excerpt.
 
 The guide JSON (~12.5 MB) is loaded **once on demand** and cached in memory for the session. It is not re-parsed on every generation or keystroke.
 
@@ -134,12 +143,13 @@ Steering text and guide grounding work together:
 
 - Steering terms are used **both** to retrieve relevant chunks and to guide the LLM's emphasis.
 - For example, `Make 40% of the questions about Nutanix backup` will retrieve guide chunks tagged with `nutanix` and `dataprotect` and also tell the LLM to emphasize that topic.
-- Selected topics from the checklist are also communicated to the LLM in the prompt, reinforcing emphasis.
+- Selected topics from the checklist are explicitly listed in the LLM prompt under a dedicated **Selected Cohesity User Guide subjects for this generation** section.
+- Steering text refines emphasis within the selected subjects; it does not replace the selected-subject filter or re-open unselected subjects.
 - Guide and exam rules always take priority over steering guidance if there is a conflict.
 
 #### What the app sends to OpenAI
 
-Only the **selected relevant guide excerpts** (capped ~30,000 characters) are sent to OpenAI, not the full 12.5 MB file. The app does not upload any local files to any server; all chunk selection happens in the browser.
+Only the **selected-subject guide excerpts** (capped ~30,000 characters) are sent to OpenAI, not the full 12.5 MB file. The prompt explicitly names the selected guide subjects and tells the model to generate primarily from those subjects. The app does not upload any local files to any server; all chunk selection happens in the browser.
 
 #### Guide metadata in saved/exported sets
 
@@ -152,7 +162,9 @@ AI-generated question sets saved or exported with guide grounding include:
 | `guideContextChunkIds` | IDs of guide chunks included in the prompt |
 | `guideContextPages` | Page ranges of those chunks |
 | `guideContextTopics` | Unique guide topics across the prompt chunks |
-| `guideSelectedTopics` | Topics selected in the checklist at generation time |
+| `guideSelectedTopics` | Topic tags selected in the checklist at generation time |
+| `guideSelectedTopicLabels` | Human-readable selected subject labels |
+| `guideRetrievalDiagnostics` | Lightweight retrieval counts such as selected subject count, candidate chunks after topic filtering, and chunks sent to the LLM |
 | `questionsWithExactSourceMeta` | Number of questions where the LLM provided per-question source fields |
 | `questionsWithFallbackSourceMeta` | Number of questions where generation-level fallback metadata was applied |
 
