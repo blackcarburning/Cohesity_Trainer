@@ -71,8 +71,8 @@ Guide-grounded mode uses the parsed guide as source-of-truth: the AI is explicit
 
 The status bar will confirm guide grounding during and after generation, for example:
 ```
-Generating 70 guide-grounded AI questions using 12 chunks from selected subjects: DataProtect, VMware, Nutanix (candidates after topic filtering: 148; chunks sent to the LLM: 12) — correct answers must be supported by the guide excerpts.
-Generated using Cohesity User Guide grounding from 12 chunks (selected subjects: DataProtect, VMware, Nutanix). Candidates after topic filtering: 148; chunks sent to the LLM: 12.
+Generating 70 guide-grounded AI questions using 50 chunks from 3 selected subjects (candidates after topic filtering: 148; chunks sent to the LLM: 50) — correct answers must be supported by the guide excerpts.
+Generated using Cohesity User Guide grounding from 50 chunks (selected subjects: DataProtect, VMware, Nutanix). Candidates after topic filtering: 148; chunks sent to the LLM: 50.
 ```
 
 Guide-grounding metadata is saved in the AI history entry so you can tell which sets were generated with guide grounding.
@@ -89,6 +89,7 @@ Each topic shows a readable label and the number of chunks tagged with it (e.g. 
 - **Core exam topics** — select the recommended subset aligned to the Cohesity Architect Expert exam scope.
 - **Filter box** — type to search topic names if the list is long.
 - Your selection is saved in `localStorage` under the key `cohesity_trainer_guide_selected_topics` and restored automatically when the guide is next loaded. Only topics that still exist in the loaded guide are restored; if no saved selection exists, all topics are selected by default.
+- A separate **Debug: LLM generation context** panel shows the latest selected domains, selected guide subjects, retrieval terms, chunk metadata, and the exact `<guide_context>` text that will be sent to OpenAI. Use **Copy context** to copy that debug payload for troubleshooting.
 
 Selected topics actively control the eligible guide-subject pool for guide-grounded generation. The app first filters chunks to those whose `topics` overlap the checked subjects, then uses domains and steering text only to refine ranking **within that selected-subject pool**.
 
@@ -110,7 +111,7 @@ When guide mode is enabled and generation is triggered, the app:
    - Steering text keywords matched against chunk `topics`, `keywords`, `headingPath`, and a preview of `text`.
    - `questionTargets` (design, architecture, implementation-detail, troubleshooting, etc.) boosted when they overlap with common exam targets.
    - Signals (`hasProcedure`, `hasCommand`, `hasLimitsOrValues`, `hasWarningsOrNotes`) boosted for detail-rich chunks.
-3. Selects the top-scoring chunks from that selected-subject pool, capped at **12 chunks** and **~30,000 characters** of guide text to keep the OpenAI request manageable.
+3. Selects the top-scoring chunks from that selected-subject pool, capped at **50 chunks** and **~100,000 characters** of excerpted guide text to keep the OpenAI request manageable.
 4. If ranking signals are weak, it still fills the context budget from the selected-subject pool rather than silently pulling unrelated topics.
 5. Formats the selected chunks as a clearly delimited `<guide_context>` block within the prompt, with metadata such as chunk ID, page range, topics, and title for each excerpt.
 
@@ -123,6 +124,7 @@ In guide-grounded mode the prompt instructs the LLM:
 - Every correct answer **must** be directly supported by one or more of the supplied guide excerpts.
 - If the excerpts do not contain enough information for a question, the LLM should not generate that question.
 - Distractors may be plausible but must not contradict facts stated in the excerpts.
+- Questions and `sourceGuideTopics` metadata must stay within the explicitly selected guide subjects; unselected subjects are treated as out of bounds.
 - The LLM is also asked to include per-question source metadata (`sourceGuideChunkIds`, `sourceGuidePages`, `sourceGuideTopics`) where possible.
 
 After generation the app validates source metadata. If the LLM omits per-question source fields, generation-level fallback metadata (chunk IDs, pages, and topics from the context window) is attached to each question automatically, and a warning is shown:
@@ -149,7 +151,7 @@ Steering text and guide grounding work together:
 
 #### What the app sends to OpenAI
 
-Only the **selected-subject guide excerpts** (capped ~30,000 characters) are sent to OpenAI, not the full 12.5 MB file. The prompt explicitly names the selected guide subjects and tells the model to generate primarily from those subjects. The app does not upload any local files to any server; all chunk selection happens in the browser.
+Only the **selected-subject guide excerpts** (capped ~100,000 characters across up to 50 excerpted chunks) are sent to OpenAI, not the full 12.5 MB file. The prompt explicitly names the selected guide subjects and tells the model to generate only from those subjects and the supplied excerpts. The app does not upload any local files to any server; all chunk selection happens in the browser.
 
 #### Guide metadata in saved/exported sets
 
@@ -161,6 +163,7 @@ AI-generated question sets saved or exported with guide grounding include:
 | `guideSourceFile` | Name of the guide JSON file used |
 | `guideContextChunkIds` | IDs of guide chunks included in the prompt |
 | `guideContextPages` | Page ranges of those chunks |
+| `guideContextChars` | Character count of the actual guide context sent to OpenAI |
 | `guideContextTopics` | Unique guide topics across the prompt chunks |
 | `guideSelectedTopics` | Topic tags selected in the checklist at generation time |
 | `guideSelectedTopicLabels` | Human-readable selected subject labels |
@@ -412,7 +415,7 @@ In brief, the app:
 
 1. **Loads the file** on demand via `fetch('cohesity-user-guide-knowledge.json')` (or the manual file picker fallback) and caches it in memory.
 2. **Selects relevant chunks** using a deterministic lexical scoring algorithm based on the user's steering guidance and selected exam domains, matching on `topics`, `keywords`, `headingPath`, and `questionTargets`.
-3. **Sends only the selected chunk texts** (~30,000 characters) to OpenAI alongside the existing exam prompt, grounding every generated question in the official user guide.
+3. **Sends only the selected chunk texts** (up to ~100,000 characters across 50 excerpted chunks) to OpenAI alongside the existing exam prompt, grounding every generated question in the official user guide.
 4. **Uses `questionTargets`** (`architecture`, `design`, `implementation-detail`, `troubleshooting`, `security`, `operations`, `workload-protection`) to steer the mix of question types.
 5. **Uses `signals`** to prefer chunks that are rich in testable detail (procedures, commands, limits, warnings).
 

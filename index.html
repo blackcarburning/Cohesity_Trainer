@@ -418,6 +418,15 @@
                 <p id="guideTopicsWarning" class="help" aria-live="polite" style="display:none;margin-top:4px;color:var(--danger,#c00);"></p>
               </div>
             </details>
+            <details id="guideGenerationDebugDetails" style="margin-top:8px;">
+              <summary style="cursor:pointer;font-weight:600;font-size:0.92em;">Debug: LLM generation context</summary>
+              <div style="margin-top:8px;">
+                <div class="button-row" style="margin-top:0;">
+                  <button id="guideGenerationDebugCopyButton" type="button" class="ghost" style="font-size:0.8em;padding:2px 7px;">Copy context</button>
+                </div>
+                <pre id="guideGenerationDebugOutput" class="lookup-response" style="margin-top:8px;max-height:320px;overflow:auto;white-space:pre-wrap;"></pre>
+              </div>
+            </details>
             <p class="help" style="margin-top:6px;">When enabled, relevant Cohesity User Guide excerpts are retrieved and added to the AI prompt, grounding question generation in the official documentation. Correct answers are instructed to be supported by the guide excerpts. The guide JSON is loaded once and cached in memory.</p>
           </div>
           <div class="button-row">
@@ -3534,6 +3543,9 @@ window.COHESITY_QUESTION_BANK =
     const guideTopicsCoreExamBtn = document.getElementById('guideTopicsCoreExam');
     const guideTopicsFilterInput = document.getElementById('guideTopicsFilter');
     const guideTopicsWarning = document.getElementById('guideTopicsWarning');
+    const guideGenerationDebugDetails = document.getElementById('guideGenerationDebugDetails');
+    const guideGenerationDebugCopyButton = document.getElementById('guideGenerationDebugCopyButton');
+    const guideGenerationDebugOutput = document.getElementById('guideGenerationDebugOutput');
 
     // ── localStorage helpers ─────────────────────────────────────────────────
     const LS_API_KEY   = 'cohesityExamApiKey';
@@ -3555,8 +3567,9 @@ window.COHESITY_QUESTION_BANK =
     const DEFAULT_TEMPERATURE_SUFFIX = 'using the model default temperature';
     // ── Guide-grounded generation constants ─────────────────────────────────
     const GUIDE_KNOWLEDGE_FILE = 'cohesity-user-guide-knowledge.json';
-    const GUIDE_MAX_CHUNKS = 12;             // max chunks to include in prompt
-    const GUIDE_MAX_CONTEXT_CHARS = 30000;   // max total chars of guide text in prompt
+    const GUIDE_MAX_CHUNKS = 50;             // max guide excerpts to include in prompt
+    const GUIDE_MAX_CONTEXT_CHARS = 100000;  // max total chars of guide text sent in prompt
+    const GUIDE_MAX_CHUNK_EXCERPT_CHARS = 1600; // max chars per guide chunk excerpt sent in prompt
     const GUIDE_CHUNK_PREVIEW_CHARS = 800;   // chars of chunk text scanned for keyword matching
     const GUIDE_TOPICS_LS_KEY = 'cohesity_trainer_guide_selected_topics';
     const GUIDE_TOPIC_LABELS = {
@@ -3731,6 +3744,7 @@ window.COHESITY_QUESTION_BANK =
     let selectedGuideTopics = null;  // Set of selected topic IDs; null = not yet initialised (treated as all)
     let guideTopicCountsCache = null; // { topicId: count } built once when guide loads
     let guideTopicAllIdsCache = null; // ordered array of topic IDs (by count desc)
+    let latestGuideGenerationDebugText = '';
 
     // ── Guide knowledge loading ──────────────────────────────────────────────
     function setGuideStatus(message, isError = false) {
@@ -3788,6 +3802,168 @@ window.COHESITY_QUESTION_BANK =
       });
     }
 
+
+    function guideTopicLabelsFromSelection(selectedTopics) {
+      return selectedTopics && selectedTopics.size > 0
+        ? [...selectedTopics].map((topicId) => guideTopicLabel(topicId))
+        : [];
+    }
+
+    function summarizeGuideTopicLabels(topicLabels) {
+      if (!topicLabels || !topicLabels.length) return null;
+      return topicLabels.length > 5
+        ? `${topicLabels.slice(0, 5).join(', ')} +${topicLabels.length - 5} more`
+        : topicLabels.join(', ');
+    }
+
+    function truncateGuideChunkText(text, maxChars = GUIDE_MAX_CHUNK_EXCERPT_CHARS) {
+      const normalized = String(text || '').trim();
+      if (normalized.length <= maxChars) return normalized;
+      return `${normalized.slice(0, maxChars).trimEnd()}…`;
+    }
+
+    function buildGuideChunkContextEntry(chunk) {
+      const pageRange = chunk.pageStart === chunk.pageEnd
+        ? `Page ${chunk.pageStart}`
+        : `Pages ${chunk.pageStart}-${chunk.pageEnd}`;
+      const topics = Array.isArray(chunk.topics) ? chunk.topics : [];
+      const heading = Array.isArray(chunk.headingPath) && chunk.headingPath.length
+        ? chunk.headingPath.join(' > ')
+        : '';
+      const title = chunk.title || heading || 'Untitled excerpt';
+      const topicStr = topics.length ? ` | Topics: ${topics.join(', ')}` : '';
+      const titleStr = title ? ` | Title: ${title}` : '';
+      const headingStr = heading && heading !== title ? ` | Heading: ${heading}` : '';
+      const excerptText = truncateGuideChunkText(chunk.text);
+      return {
+        chunkId: String(chunk.id),
+        pageRange,
+        title,
+        heading,
+        topics,
+        excerptText,
+        entryText: `[Chunk ${chunk.id} | ${pageRange}${topicStr}${titleStr}${headingStr}]\n${excerptText}`
+      };
+    }
+
+    function buildGuideContextPayload(chunks) {
+      if (!chunks.length) {
+        return {
+          context: '',
+          totalContextChars: 0,
+          entries: []
+        };
+      }
+      const entries = chunks.map((chunk) => buildGuideChunkContextEntry(chunk));
+      const context = `Cohesity User Guide excerpts for grounding:\n<guide_context>\n${entries.map((entry) => entry.entryText).join('\n\n')}\n</guide_context>`;
+      return {
+        context,
+        totalContextChars: context.length,
+        entries
+      };
+    }
+
+    function buildGuideGenerationSnapshot({
+      selectedDomains = getSelectedDomains(),
+      steeringText = sanitizeSteeringPrompt(aiSteeringPromptInput ? aiSteeringPromptInput.value : ''),
+      guideGroundingEnabled = !!(useGuideKnowledgeCheckbox && useGuideKnowledgeCheckbox.checked),
+      activeSelectedTopics = guideKnowledgeData ? getActiveSelectedGuideTopics() : null
+    } = {}) {
+      const selectedTopicLabels = guideTopicLabelsFromSelection(activeSelectedTopics);
+      const hasNoSelectedTopics = !!(guideGroundingEnabled && hasGuideTopicsAvailable() && activeSelectedTopics && activeSelectedTopics.size === 0);
+      let guideChunks = [];
+      let guideRetrievalDiagnostics = null;
+      let contextPayload = {
+        context: '',
+        totalContextChars: 0,
+        entries: []
+      };
+
+      if (guideGroundingEnabled && guideKnowledgeData && !hasNoSelectedTopics) {
+        const guideRetrieval = retrieveGuideChunks(selectedDomains, steeringText, activeSelectedTopics);
+        guideChunks = guideRetrieval.chunks;
+        guideRetrievalDiagnostics = guideRetrieval.diagnostics;
+        contextPayload = buildGuideContextPayload(guideChunks);
+      }
+
+      return {
+        guideGroundingEnabled,
+        guideLoaded: !!guideKnowledgeData,
+        selectedDomains,
+        steeringText,
+        activeSelectedTopics,
+        selectedTopicLabels,
+        selectedTopicSummary: summarizeGuideTopicLabels(selectedTopicLabels),
+        hasNoSelectedTopics,
+        guideChunks,
+        guideRetrievalDiagnostics,
+        contextPayload
+      };
+    }
+
+    function renderGuideGenerationDebug({
+      phase = 'Preview',
+      statusMessage = '',
+      snapshot = buildGuideGenerationSnapshot()
+    } = {}) {
+      if (!guideGenerationDebugOutput) return;
+      const selectedDomainList = snapshot.selectedDomains && snapshot.selectedDomains.length
+        ? snapshot.selectedDomains.join(', ')
+        : '(all domains)';
+      const selectedTopicIds = snapshot.activeSelectedTopics && snapshot.activeSelectedTopics.size > 0
+        ? [...snapshot.activeSelectedTopics]
+        : [];
+      const selectedTopicLines = selectedTopicIds.length
+        ? selectedTopicIds.map((topicId, index) => `  ${index + 1}. ${guideTopicLabel(topicId)} [${topicId}]`)
+        : ['  (none)'];
+      const diagnostics = snapshot.guideRetrievalDiagnostics || {};
+      const chunkLines = snapshot.contextPayload.entries.length
+        ? snapshot.contextPayload.entries.map((entry, index) =>
+            `  ${index + 1}. Chunk ${entry.chunkId} | ${entry.pageRange} | Topics: ${entry.topics.length ? entry.topics.join(', ') : '(none)'} | Title: ${entry.title}${entry.heading && entry.heading !== entry.title ? ` | Heading: ${entry.heading}` : ''} | Excerpt chars: ${entry.excerptText.length}`
+          )
+        : ['  (none)'];
+      const lines = [
+        `Stage: ${phase}`,
+        `Latest status: ${statusMessage || '(none)'}`,
+        `Guide grounding enabled: ${snapshot.guideGroundingEnabled ? 'yes' : 'no'}`,
+        `Guide knowledge loaded: ${snapshot.guideLoaded ? 'yes' : 'no'}`,
+        `Selected exam domains: ${selectedDomainList}`,
+        `Steering text sent to retrieval/prompt: ${snapshot.steeringText || '(none)'}`,
+        `Selected guide subjects/topics (${selectedTopicIds.length}):`,
+        ...selectedTopicLines
+      ];
+
+      if (!snapshot.guideGroundingEnabled) {
+        lines.push('Guide grounding is disabled, so no guide context will be sent to the LLM.');
+      } else if (!snapshot.guideLoaded) {
+        lines.push('Guide grounding is enabled, but the guide knowledge file is not loaded yet.');
+      } else if (snapshot.hasNoSelectedTopics) {
+        lines.push('Guide grounding is blocked: select at least one guide subject before generating guide-grounded questions.');
+      } else {
+        lines.push(
+          `Retrieval terms: ${Array.isArray(diagnostics.terms) && diagnostics.terms.length ? diagnostics.terms.join(', ') : '(none)'}`,
+          `Priority topics derived from domains/steering: ${Array.isArray(diagnostics.priorityTopics) && diagnostics.priorityTopics.length ? diagnostics.priorityTopics.join(', ') : '(none)'}`,
+          `Candidate chunks after selected-subject filtering: ${diagnostics.candidateChunkCount || 0}`,
+          `Scored relevant chunks: ${diagnostics.scoredRelevantChunkCount || 0}`,
+          `Chunks included in guide context: ${snapshot.guideChunks.length} / ${GUIDE_MAX_CHUNKS}`,
+          `Guide context character count sent to the LLM: ${snapshot.contextPayload.totalContextChars} / ${GUIDE_MAX_CONTEXT_CHARS}`,
+          'Chunk metadata included in the current guide context:',
+          ...chunkLines,
+          'Actual guide context sent to the LLM:',
+          snapshot.contextPayload.context || '(none)'
+        );
+      }
+
+      latestGuideGenerationDebugText = lines.join('\n');
+      guideGenerationDebugOutput.textContent = latestGuideGenerationDebugText;
+      if (guideGenerationDebugCopyButton) {
+        guideGenerationDebugCopyButton.disabled = !latestGuideGenerationDebugText.trim();
+      }
+      if (guideGenerationDebugDetails && phase !== 'Preview') {
+        guideGenerationDebugDetails.open = true;
+      }
+    }
+
     function buildGuideTopicsChecklist() {
       if (!guideKnowledgeData || !guideTopicsChecklist) return;
       const counts = {};
@@ -3818,6 +3994,7 @@ window.COHESITY_QUESTION_BANK =
       }
 
       updateGuideTopicsWarning();
+      renderGuideGenerationDebug();
     }
 
     function updateGuideTopicsWarning() {
@@ -3834,7 +4011,7 @@ window.COHESITY_QUESTION_BANK =
       return !!(guideTopicAllIdsCache && guideTopicAllIdsCache.length > 0);
     }
 
-    function syncSelectedGuideTopicsFromChecklist() {
+    function syncSelectedGuideTopicsFromChecklist(shouldRefreshDebug = true) {
       if (!guideTopicsChecklist || !hasGuideTopicsAvailable()) return;
       // When topics exist, a null selection means "treat the current guide topic universe as initially selected"
       // until the checklist state is synced for the first time.
@@ -3846,13 +4023,14 @@ window.COHESITY_QUESTION_BANK =
       selectedGuideTopics = nextSelection;
       saveGuideTopicSelection();
       updateGuideTopicsWarning();
+      if (shouldRefreshDebug) renderGuideGenerationDebug();
     }
 
     function getActiveSelectedGuideTopics() {
       // Returns null only when the loaded guide has no topic taxonomy. Otherwise returns the current selection Set,
       // which may be empty and should block guide-grounded generation.
       if (!hasGuideTopicsAvailable()) return null;
-      syncSelectedGuideTopicsFromChecklist();
+      syncSelectedGuideTopicsFromChecklist(false);
       return selectedGuideTopics ? new Set(selectedGuideTopics) : new Set();
     }
 
@@ -3868,6 +4046,7 @@ window.COHESITY_QUESTION_BANK =
       saveGuideTopicSelection();
       updateGuideTopicsWarning();
       renderGuideTopicsChecklist(guideTopicsFilterInput ? guideTopicsFilterInput.value : '');
+      renderGuideGenerationDebug();
     }
 
     async function loadGuideKnowledgeFromFile(file) {
@@ -3931,6 +4110,8 @@ window.COHESITY_QUESTION_BANK =
             selectedTopicCount: selectedTopics ? selectedTopics.size : 0,
             candidateChunkCount: 0,
             chunkCountSentToLLM: 0,
+            terms: [],
+            priorityTopics: [],
           }
         };
       }
@@ -4043,7 +4224,8 @@ window.COHESITY_QUESTION_BANK =
       let totalChars = 0;
       for (const { chunk } of pool) {
         if (selected.length >= GUIDE_MAX_CHUNKS) break;
-        const textLen = (chunk.text || '').length;
+        const contextEntry = buildGuideChunkContextEntry(chunk);
+        const textLen = contextEntry.entryText.length;
         if (selected.length > 0 && totalChars + textLen > GUIDE_MAX_CONTEXT_CHARS) continue;
         selected.push(chunk);
         totalChars += textLen;
@@ -4056,6 +4238,9 @@ window.COHESITY_QUESTION_BANK =
           candidateChunkCount: candidateChunks.length,
           scoredRelevantChunkCount: relevant.length,
           chunkCountSentToLLM: selected.length,
+          totalContextChars: totalChars,
+          terms,
+          priorityTopics: [...priorityTopics],
         }
       };
     }
@@ -4064,22 +4249,7 @@ window.COHESITY_QUESTION_BANK =
      * Build a compact, delimited guide context string from selected chunks.
      */
     function buildGuideContextString(chunks) {
-      if (!chunks.length) return '';
-      const parts = chunks.map((chunk) => {
-        const pageRange = chunk.pageStart === chunk.pageEnd
-          ? `Page ${chunk.pageStart}`
-          : `Pages ${chunk.pageStart}-${chunk.pageEnd}`;
-        const topics = Array.isArray(chunk.topics) ? chunk.topics.join(', ') : '';
-        const heading = Array.isArray(chunk.headingPath) && chunk.headingPath.length
-          ? chunk.headingPath.join(' > ')
-          : '';
-        const title = chunk.title || heading || 'Untitled excerpt';
-        const topicStr = topics ? ` | Topics: ${topics}` : '';
-        const titleStr = title ? ` | Title: ${title}` : '';
-        const headingStr = heading && heading !== title ? ` | Heading: ${heading}` : '';
-        return `[Chunk ${chunk.id} | ${pageRange}${topicStr}${titleStr}${headingStr}]\n${(chunk.text || '').trim()}`;
-      });
-      return `Cohesity User Guide excerpts for grounding:\n<guide_context>\n${parts.join('\n\n')}\n</guide_context>`;
+      return buildGuideContextPayload(chunks).context;
     }
 
     function escapeRegExp(value) {
@@ -4123,7 +4293,7 @@ window.COHESITY_QUESTION_BANK =
           ...(selectedTopicLabels.length ? [
             'Selected Cohesity User Guide subjects for this generation:',
             ...selectedTopicLabels.map((label) => `- ${label}`),
-            'Generate questions primarily from these selected subjects. Do not generate questions from unselected guide subjects unless required to explain a relationship within the provided excerpts.',
+            'Generate questions ONLY from these selected guide subjects and the provided <guide_context> excerpts. Treat every unselected guide subject as out of bounds; do not generate questions, explanations, or sourceGuideTopics from any unselected subject, even if it is closely related.',
           ] : []),
           'Use the above Cohesity User Guide excerpts as the primary source-of-truth for product behaviour, feature boundaries, procedures, supportability, commands, warnings, and configuration details.',
           'CRITICAL: For every generated question, the correct answer MUST be directly supported by one or more of the Cohesity User Guide excerpts provided in <guide_context>. Do not make a correct answer rely on external Cohesity knowledge or unsupported inference outside the provided excerpts.',
@@ -4132,6 +4302,7 @@ window.COHESITY_QUESTION_BANK =
           'Do not invent product facts not supported by the excerpts.',
           'Prefer difficult scenario-based, design, implementation-detail, troubleshooting, and feature-boundary questions grounded in the provided guide material.',
           'For each question, include at least one of these optional source fields where the guide excerpts support it: "sourceGuideChunkIds" (array of chunk ID strings), "sourceGuidePages" (array of page number strings), "sourceGuideTopics" (array of guide topic strings). Example: {"sourceGuideChunkIds":["c42"],"sourceGuideTopics":["dataprotect"]}.',
+          'If you include sourceGuideTopics, every topic value MUST come from the selected guide-subject list above and from the supporting chunk metadata in <guide_context>.',
           'Guide and exam rules take priority over steering guidance if there is a conflict.',
           'The existing JSON schema, quality, distractor, and multi-select rules remain in full effect.',
           ...(selectedTopicLabels.length ? [`Emphasize questions covering these selected guide topics: ${selectedTopicLabels.join(', ')}.`] : []),
@@ -5146,6 +5317,38 @@ window.COHESITY_QUESTION_BANK =
       return trimmed;
     }
 
+
+    function sanitizeSourceGuideStringArray(values) {
+      if (!Array.isArray(values)) return undefined;
+      const sanitized = [...new Set(values
+        .map((value) => typeof value === 'string' ? value.trim() : '')
+        .filter(Boolean))];
+      return sanitized.length ? sanitized : undefined;
+    }
+
+    function filterGeneratedGuideSourceMetadata(question, { allowedChunkIds = null, allowedPages = null, allowedTopics = null } = {}) {
+      let filtered = false;
+      const nextQuestion = { ...question };
+
+      if (Array.isArray(nextQuestion.sourceGuideChunkIds) && allowedChunkIds) {
+        const filteredChunkIds = nextQuestion.sourceGuideChunkIds.filter((id) => allowedChunkIds.has(id));
+        if (filteredChunkIds.length !== nextQuestion.sourceGuideChunkIds.length) filtered = true;
+        nextQuestion.sourceGuideChunkIds = filteredChunkIds.length ? filteredChunkIds : undefined;
+      }
+      if (Array.isArray(nextQuestion.sourceGuidePages) && allowedPages) {
+        const filteredPages = nextQuestion.sourceGuidePages.filter((page) => allowedPages.has(page));
+        if (filteredPages.length !== nextQuestion.sourceGuidePages.length) filtered = true;
+        nextQuestion.sourceGuidePages = filteredPages.length ? filteredPages : undefined;
+      }
+      if (Array.isArray(nextQuestion.sourceGuideTopics) && allowedTopics) {
+        const filteredTopics = nextQuestion.sourceGuideTopics.filter((topic) => allowedTopics.has(topic));
+        if (filteredTopics.length !== nextQuestion.sourceGuideTopics.length) filtered = true;
+        nextQuestion.sourceGuideTopics = filteredTopics.length ? filteredTopics : undefined;
+      }
+      if (filtered) nextQuestion.sourceGuideMetadataFiltered = true;
+      return { question: nextQuestion, filtered };
+    }
+
     function validateGeneratedQuestion(question, index) {
       const prefix = `Generated question ${index + 1}`;
       if (!question || typeof question !== 'object') throw new Error(`${prefix} is not an object.`);
@@ -5209,6 +5412,9 @@ window.COHESITY_QUESTION_BANK =
         citationTitle: hasUrlCitation ? question.citationTitle.trim() : undefined,
         citationUrl: hasUrlCitation ? question.citationUrl.trim() : undefined,
         citationTopic: hasTopicCitation ? question.citationTopic.trim() : undefined,
+        sourceGuideChunkIds: sanitizeSourceGuideStringArray(question.sourceGuideChunkIds),
+        sourceGuidePages: sanitizeSourceGuideStringArray(question.sourceGuidePages),
+        sourceGuideTopics: sanitizeSourceGuideStringArray(question.sourceGuideTopics),
         source: 'OpenAI'
       }, prefix);
       return normalizedQuestion;
@@ -5356,6 +5562,12 @@ window.COHESITY_QUESTION_BANK =
       let guideContext = '';
       let activeSelectedTopics = null;
       let guideRetrievalDiagnostics = null;
+      let guideGenerationSnapshot = buildGuideGenerationSnapshot({
+        selectedDomains,
+        steeringText: steeringPrompt,
+        guideGroundingEnabled,
+        activeSelectedTopics: guideKnowledgeData ? getActiveSelectedGuideTopics() : null
+      });
 
       if (guideGroundingEnabled) {
         // Load guide knowledge if not yet loaded
@@ -5365,33 +5577,52 @@ window.COHESITY_QUESTION_BANK =
           if (!guideKnowledgeData) {
             // loadGuideKnowledge already set status text with error; surface it to examStatus too
             examStatus.textContent = `Cannot generate guide-grounded questions: ${guideKnowledgeStatus.textContent}`;
+            renderGuideGenerationDebug({
+              phase: 'Generation blocked',
+              statusMessage: examStatus.textContent,
+              snapshot: guideGenerationSnapshot
+            });
             generateAIButton.disabled = false;
             generateAIButton.textContent = previousLabel;
             return;
           }
         }
 
-        activeSelectedTopics = getActiveSelectedGuideTopics();
+        guideGenerationSnapshot = buildGuideGenerationSnapshot({
+          selectedDomains,
+          steeringText: steeringPrompt,
+          guideGroundingEnabled
+        });
+        activeSelectedTopics = guideGenerationSnapshot.activeSelectedTopics;
 
         // Block generation if no guide topics are selected
-        if (activeSelectedTopics && activeSelectedTopics.size === 0) {
+        if (guideGenerationSnapshot.hasNoSelectedTopics) {
           examStatus.textContent = 'Select at least one guide subject before generating guide-grounded questions.';
+          renderGuideGenerationDebug({
+            phase: 'Generation blocked',
+            statusMessage: examStatus.textContent,
+            snapshot: guideGenerationSnapshot
+          });
           generateAIButton.disabled = false;
           generateAIButton.textContent = previousLabel;
           return;
         }
 
-        const guideRetrieval = retrieveGuideChunks(selectedDomains, steeringPrompt, activeSelectedTopics);
-        guideChunks = guideRetrieval.chunks;
-        guideRetrievalDiagnostics = guideRetrieval.diagnostics;
+        guideChunks = guideGenerationSnapshot.guideChunks;
+        guideRetrievalDiagnostics = guideGenerationSnapshot.guideRetrievalDiagnostics;
         if (guideChunks.length > 0) {
-          guideContext = buildGuideContextString(guideChunks);
+          guideContext = guideGenerationSnapshot.contextPayload.context;
         } else {
           // Guide loaded but no relevant chunks — surface a clear message and stop
           const noChunksMsg = activeSelectedTopics && activeSelectedTopics.size > 0
             ? 'No guide chunks found for the selected subjects. Select more subjects or broaden the selection.'
             : 'No relevant guide chunks found for the current settings. Try broadening the steering guidance or domain selection.';
           examStatus.textContent = noChunksMsg;
+          renderGuideGenerationDebug({
+            phase: 'Generation blocked',
+            statusMessage: examStatus.textContent,
+            snapshot: guideGenerationSnapshot
+          });
           generateAIButton.disabled = false;
           generateAIButton.textContent = previousLabel;
           return;
@@ -5402,14 +5633,8 @@ window.COHESITY_QUESTION_BANK =
       const selectedTopicTags = activeSelectedTopics && activeSelectedTopics.size > 0
         ? [...activeSelectedTopics]
         : null;
-      const selectedTopicLabels = selectedTopicTags
-        ? selectedTopicTags.map((t) => GUIDE_TOPIC_LABELS[t] || t)
-        : null;
-      const selectedSubjectSummary = selectedTopicLabels
-        ? (selectedTopicLabels.length > 5
-            ? `${selectedTopicLabels.slice(0, 5).join(', ')} +${selectedTopicLabels.length - 5} more`
-            : selectedTopicLabels.join(', '))
-        : null;
+      const selectedTopicLabels = selectedTopicTags ? guideTopicLabelsFromSelection(activeSelectedTopics) : null;
+      const selectedSubjectSummary = summarizeGuideTopicLabels(selectedTopicLabels);
       const baseStatusPrefix = guideContext
         ? [
             `Generating ${OPENAI_REQUEST_QUESTION_COUNT} guide-grounded AI questions using ${chunkCount} chunk${chunkCount === 1 ? '' : 's'}`,
@@ -5426,6 +5651,11 @@ window.COHESITY_QUESTION_BANK =
       examStatus.textContent = steeringPromptWasSanitized
         ? `${baseStatusPrefix} (steering guidance was sanitized for safety)`
         : baseStatusPrefix;
+      renderGuideGenerationDebug({
+        phase: 'Generation request started',
+        statusMessage: examStatus.textContent,
+        snapshot: guideGenerationSnapshot
+      });
 
       try {
         const { payload, usedDefaultTemperature: examUsedDefaultTemperature } =
@@ -5460,16 +5690,37 @@ window.COHESITY_QUESTION_BANK =
         const questionsWithGenericScope = new WeakSet();
         let skippedInvalidGeneratedCount = 0;
         let skippedLowQualityDistractorCount = 0;
+        let questionsWithFilteredGuideSourceMeta = 0;
+        const allowedGuideChunkIds = guideChunks.length ? new Set(guideChunks.map((chunk) => String(chunk.id))) : null;
+        const allowedGuidePages = guideChunks.length
+          ? new Set(guideChunks.flatMap((chunk) =>
+              chunk.pageStart === chunk.pageEnd
+                ? [String(chunk.pageStart)]
+                : [String(chunk.pageStart), String(chunk.pageEnd), `${chunk.pageStart}-${chunk.pageEnd}`]
+            ))
+          : null;
+        const allowedGuideTopics = activeSelectedTopics && activeSelectedTopics.size > 0
+          ? new Set(activeSelectedTopics)
+          : (guideChunks.length
+              ? new Set(guideChunks.flatMap((chunk) => Array.isArray(chunk.topics) ? chunk.topics : []))
+              : null);
         parsed.questions.forEach((question, index) => {
           try {
-            const validatedQuestion = shuffleQuestionChoices(
-              validateGeneratedQuestion(question, index),
+            const validatedQuestion = validateGeneratedQuestion(question, index);
+            const { question: filteredGuideMetaQuestion, filtered: guideMetaFiltered } = filterGeneratedGuideSourceMetadata(validatedQuestion, {
+              allowedChunkIds: allowedGuideChunkIds,
+              allowedPages: allowedGuidePages,
+              allowedTopics: allowedGuideTopics
+            });
+            if (guideMetaFiltered) questionsWithFilteredGuideSourceMeta += 1;
+            const shuffledQuestion = shuffleQuestionChoices(
+              filteredGuideMetaQuestion,
               `Generated question ${index + 1}`
             );
-            if (appearsTooGenericForExamScope(validatedQuestion)) {
-              questionsWithGenericScope.add(validatedQuestion);
+            if (appearsTooGenericForExamScope(shuffledQuestion)) {
+              questionsWithGenericScope.add(shuffledQuestion);
             }
-            validGeneratedQuestions.push(validatedQuestion);
+            validGeneratedQuestions.push(shuffledQuestion);
           } catch (error) {
             skippedInvalidGeneratedCount += 1;
             if (error && error.code === 'LOW_QUALITY_DISTRACTOR') {
@@ -5572,6 +5823,11 @@ window.COHESITY_QUESTION_BANK =
               ? `${warningMessage} Some guide-grounded questions did not include exact source chunk metadata; generation-level guide context metadata was preserved instead.`
               : `Some guide-grounded questions did not include exact source chunk metadata; generation-level guide context metadata was preserved instead.`;
           }
+          if (questionsWithFilteredGuideSourceMeta > 0) {
+            warningMessage = warningMessage
+              ? `${warningMessage} ${questionsWithFilteredGuideSourceMeta} guide-grounded question${questionsWithFilteredGuideSourceMeta === 1 ? '' : 's'} included out-of-scope source metadata. It was filtered to the selected context.`
+              : `${questionsWithFilteredGuideSourceMeta} guide-grounded question${questionsWithFilteredGuideSourceMeta === 1 ? '' : 's'} included out-of-scope source metadata. It was filtered to the selected context.`;
+          }
         } else if (guideGroundingEnabled) {
           statusMessage += ' (Guide mode enabled but no relevant chunks were found; generated without guide grounding.)';
         }
@@ -5602,20 +5858,32 @@ window.COHESITY_QUESTION_BANK =
               guideContextChunkIds: guideChunks.map((c) => c.id),
               guideContextPages: guideChunks.map((c) => c.pageStart === c.pageEnd ? String(c.pageStart) : `${c.pageStart}-${c.pageEnd}`),
               guideContextChunkCount: chunkCount,
+              guideContextChars: guideGenerationSnapshot.contextPayload.totalContextChars,
               guideContextTopics: [...new Set(guideChunks.flatMap((c) => Array.isArray(c.topics) ? c.topics : []))],
               ...(selectedTopicTags ? { guideSelectedTopics: selectedTopicTags, guideSelectedTopicLabels: selectedTopicLabels } : {}),
               ...(guideRetrievalDiagnostics ? { guideRetrievalDiagnostics } : {}),
               questionsWithExactSourceMeta,
               questionsWithFallbackSourceMeta,
+              questionsWithFilteredGuideSourceMeta,
             } : { guideGrounded: false })
           }
         );
         renderHistoryDropdown();
         renderStatsPanel();
         examStatus.textContent = appendHistorySaveWarning(examStatus.textContent, historyResult.saved);
+        renderGuideGenerationDebug({
+          phase: 'Generation completed',
+          statusMessage: examStatus.textContent,
+          snapshot: guideGenerationSnapshot
+        });
       } catch (error) {
         console.error(error);
         examStatus.textContent = error instanceof Error ? error.message : 'Failed to generate AI questions.';
+        renderGuideGenerationDebug({
+          phase: 'Generation failed',
+          statusMessage: examStatus.textContent,
+          snapshot: guideGenerationSnapshot
+        });
       } finally {
         generateAIButton.disabled = false;
         generateAIButton.textContent = previousLabel;
@@ -5785,6 +6053,7 @@ window.COHESITY_QUESTION_BANK =
           guideTopicsDetails.style.display = '';
         }
       }
+      renderGuideGenerationDebug();
     });
     loadGuideManuallyButton.addEventListener('click', () => {
       guideKnowledgeFileInput.click();
@@ -5809,6 +6078,7 @@ window.COHESITY_QUESTION_BANK =
     if (guideTopicsFilterInput) {
       guideTopicsFilterInput.addEventListener('input', () => {
         renderGuideTopicsChecklist(guideTopicsFilterInput.value);
+        renderGuideGenerationDebug();
       });
     }
     if (guideTopicsChecklist) {
@@ -5821,7 +6091,43 @@ window.COHESITY_QUESTION_BANK =
 
     openaiKeyInput.addEventListener('input', saveApiKeyAndModel);
     openaiModelInput.addEventListener('change', saveApiKeyAndModel);
-    aiSteeringPromptInput.addEventListener('input', saveSteeringPrompt);
+    aiSteeringPromptInput.addEventListener('input', () => {
+      saveSteeringPrompt();
+      renderGuideGenerationDebug();
+    });
+    if (guideGenerationDebugCopyButton) {
+      guideGenerationDebugCopyButton.addEventListener('click', async () => {
+        if (!latestGuideGenerationDebugText.trim()) return;
+        const originalLabel = guideGenerationDebugCopyButton.textContent;
+        try {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(latestGuideGenerationDebugText);
+          } else {
+            const temp = document.createElement('textarea');
+            temp.value = latestGuideGenerationDebugText;
+            temp.setAttribute('readonly', 'readonly');
+            temp.style.position = 'absolute';
+            temp.style.left = '-9999px';
+            document.body.appendChild(temp);
+            temp.select();
+            document.execCommand('copy');
+            document.body.removeChild(temp);
+          }
+          guideGenerationDebugCopyButton.textContent = 'Copied!';
+        } catch (error) {
+          console.error('Failed to copy guide generation context:', error);
+          guideGenerationDebugCopyButton.textContent = 'Copy failed';
+        }
+        setTimeout(() => {
+          guideGenerationDebugCopyButton.textContent = originalLabel;
+        }, 1500);
+      });
+    }
+    if (domainFilters) {
+      domainFilters.addEventListener('change', () => {
+        renderGuideGenerationDebug();
+      });
+    }
 
     restoreApiKeyAndModel();
     restoreSteeringPrompt();
@@ -5829,6 +6135,7 @@ window.COHESITY_QUESTION_BANK =
     renderHistoryDropdown();
     renderStatsPanel();
     renderQuestions();
+    renderGuideGenerationDebug();
 
     // ── Startup self-test ────────────────────────────────────────────────────
     (function startupHealthCheck() {
