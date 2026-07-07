@@ -296,7 +296,7 @@
   <div class="page">
     <section class="hero">
       <h1>Cohesity Certified Architect Expert Practice Exam</h1>
-      <p class="lead">Generate a 50-question practice exam aligned to the Cohesity Architect Expert overview. You can add an optional timer, reveal answers when you want them, and generate a fresh AI exam client-side with your own OpenAI API key (requests 70 and displays up to 50 valid questions). Built-in questions prefer unique selection; if your active domain filters reduce the pool below 50, the app repeats questions as needed to reach 50.</p>
+      <p class="lead">Generate a 50-question practice exam aligned to the Cohesity Architect Expert overview. You can add an optional timer, reveal answers when you want them, and generate a fresh AI exam client-side with your own OpenAI API key (requests 60 and displays up to 50 valid questions). Built-in questions prefer unique selection; if your active domain filters reduce the pool below 50, the app repeats questions as needed to reach 50.</p>
       <div class="timer-row">
         <div id="timerPill" class="timer-pill" hidden aria-live="polite">Timer off</div>
         <div class="small-note">Questions cover architecture, discovery and design, security, integrations, and troubleshooting topics from the certification overview.</div>
@@ -365,7 +365,7 @@
       <aside class="side-col">
         <section class="panel" aria-labelledby="openai-heading">
           <h2 id="openai-heading">Generate AI exam</h2>
-          <p class="help">Use your own API key to generate a fresh AI exam client-side (requests 70 and displays up to 50 valid questions). <strong>Generating replaces the current exam.</strong> Your API key and selected model are saved in browser local storage for convenience.</p>
+          <p class="help">Use your own API key to generate a fresh AI exam client-side (requests 60 and displays up to 50 valid questions). <strong>Generating replaces the current exam.</strong> Your API key and selected model are saved in browser local storage for convenience.</p>
           <div class="controls-row">
             <div>
               <label for="openaiKey">OpenAI API key</label>
@@ -430,7 +430,7 @@
             <p class="help" style="margin-top:6px;">When enabled, relevant Cohesity User Guide excerpts are retrieved and added to the AI prompt, grounding question generation in the official documentation. Correct answers are instructed to be supported by the guide excerpts. The guide JSON is loaded once and cached in memory.</p>
           </div>
           <div class="button-row">
-            <button id="generateAIButton" type="button" class="secondary">Generate AI exam (70→50)</button>
+            <button id="generateAIButton" type="button" class="secondary">Generate AI exam (60→50)</button>
           </div>
           <p class="small-note">AI generation is tuned for product-specific Cohesity Architect Expert questions with plausible Cohesity-adjacent distractors. Generated sets are saved in browser memory and do not modify the built-in bank.</p>
           <div class="lookup-section" aria-labelledby="lookup-heading">
@@ -3556,9 +3556,9 @@ window.COHESITY_QUESTION_BANK =
     const APP_VERSION  = 1;
     const SOURCE_AI_GENERATED = 'AI generated';
     const DISPLAY_EXAM_QUESTION_COUNT = 50;
-    const OPENAI_REQUEST_QUESTION_COUNT = 70;
+    const OPENAI_REQUEST_QUESTION_COUNT = 60;
     const MAX_MULTI_PER_EXAM = 10;
-    const MAX_MULTI_IN_OPENAI_REQUEST = 14;
+    const MAX_MULTI_IN_OPENAI_REQUEST = 12;
     const LOOKUP_QUERY_MAX_LENGTH = 2000;
     const STEERING_PROMPT_MAX_LENGTH = 2000;
     const LOOKUP_TEMPERATURE = 0.2;
@@ -3567,8 +3567,8 @@ window.COHESITY_QUESTION_BANK =
     const DEFAULT_TEMPERATURE_SUFFIX = 'using the model default temperature';
     // ── Guide-grounded generation constants ─────────────────────────────────
     const GUIDE_KNOWLEDGE_FILE = 'cohesity-user-guide-knowledge.json';
-    const GUIDE_MAX_CHUNKS = 50;             // max guide excerpts to include in prompt
-    const GUIDE_MAX_CONTEXT_CHARS = 100000;  // max total chars of guide text sent in prompt
+    const GUIDE_MAX_CHUNKS = 25;             // max guide excerpts to include in prompt
+    const GUIDE_MAX_CONTEXT_CHARS = 50000;   // max total chars of guide text sent in prompt
     const GUIDE_MAX_CHUNK_EXCERPT_CHARS = 1600; // max chars per guide chunk excerpt sent in prompt
     const GUIDE_CHUNK_PREVIEW_CHARS = 800;   // chars of chunk text scanned for keyword matching
     const GUIDE_TOPICS_LS_KEY = 'cohesity_trainer_guide_selected_topics';
@@ -4290,7 +4290,7 @@ window.COHESITY_QUESTION_BANK =
         'Each question must include either correctAnswerIndex (single-answer, 4 choices) or correctAnswerIndexes (multi-select).',
         'Multi-select questions must use ONLY these two patterns: exactly 4 choices with 2 correct answers (correctAnswerIndexes length 2), OR exactly 5 choices with 3 correct answers (correctAnswerIndexes length 3). No other multi-select patterns are accepted.',
         `IMPORTANT: Include NO MORE THAN ${MAX_MULTI_IN_OPENAI_REQUEST} multi-select questions out of the ${OPENAI_REQUEST_QUESTION_COUNT} total. This helps the displayed ${DISPLAY_EXAM_QUESTION_COUNT}-question exam stay near the normal cap of at most ${MAX_MULTI_PER_EXAM} multi-select questions.`,
-        `Include approximately 7 of the ${OPENAI_REQUEST_QUESTION_COUNT} questions (about 10%) that test technical implementation details from official Cohesity documentation, such as SpanFS/filesystem behaviour, supported commands or UI/Siren health-check workflows, Cohesity services/components (for example iris, magneto, bridge, nexus, athena), their purpose, important states/values, and troubleshooting or capacity/performance signals. Keep these questions architect-relevant and avoid unsupported command trivia. Use official Cohesity documentation references for citationTitle/citationUrl where available; otherwise use citationTopic: "Cohesity certification overview / study topic".`,
+        `Include approximately ${Math.max(1, Math.round(OPENAI_REQUEST_QUESTION_COUNT * 0.1))} of the ${OPENAI_REQUEST_QUESTION_COUNT} questions (about 10%) that test technical implementation details from official Cohesity documentation, such as SpanFS/filesystem behaviour, supported commands or UI/Siren health-check workflows, Cohesity services/components (for example iris, magneto, bridge, nexus, athena), their purpose, important states/values, and troubleshooting or capacity/performance signals. Keep these questions architect-relevant and avoid unsupported command trivia. Use official Cohesity documentation references for citationTitle/citationUrl where available; otherwise use citationTopic: "Cohesity certification overview / study topic".`,
         formatPromptSection('Question scope topics to cover across the set', EXAM_SCOPE_TOPICS),
         formatPromptSection('Technical depth rules', QUESTION_TECHNICAL_DEPTH_RULES),
         formatPromptSection('Distractor quality rules', DISTRACTOR_QUALITY_RULES),
