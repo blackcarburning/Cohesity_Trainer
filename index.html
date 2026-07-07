@@ -3749,6 +3749,10 @@ window.COHESITY_QUESTION_BANK =
     }
 
     function loadGuideTopicSelection(allTopicIds) {
+      if (!Array.isArray(allTopicIds) || allTopicIds.length === 0) {
+        selectedGuideTopics = null; // no topic taxonomy is available, so guide retrieval cannot be topic-filtered
+        return;
+      }
       const saved = lsGet(GUIDE_TOPICS_LS_KEY, null);
       if (Array.isArray(saved)) {
         const validIds = new Set(allTopicIds);
@@ -3818,32 +3822,52 @@ window.COHESITY_QUESTION_BANK =
 
     function updateGuideTopicsWarning() {
       if (!guideTopicsWarning) return;
-      if (selectedGuideTopics && selectedGuideTopics.size === 0) {
-        guideTopicsWarning.textContent = 'No guide topics selected. Select at least one topic before generating guide-grounded questions.';
+      if (hasGuideTopicsAvailable() && selectedGuideTopics && selectedGuideTopics.size === 0) {
+        guideTopicsWarning.textContent = 'No guide topics selected. Select at least one guide subject before generating guide-grounded questions.';
         guideTopicsWarning.style.display = '';
       } else {
         guideTopicsWarning.style.display = 'none';
       }
     }
 
+    function hasGuideTopicsAvailable() {
+      return !!(guideTopicAllIdsCache && guideTopicAllIdsCache.length > 0);
+    }
+
     function syncSelectedGuideTopicsFromChecklist() {
-      if (!guideTopicsChecklist) return;
-      selectedGuideTopics = new Set();
+      if (!guideTopicsChecklist || !hasGuideTopicsAvailable()) return;
+      // When topics exist, a null selection means "treat the current guide topic universe as initially selected"
+      // until the checklist state is synced for the first time.
+      const nextSelection = new Set(selectedGuideTopics === null ? guideTopicAllIdsCache : selectedGuideTopics);
       guideTopicsChecklist.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
-        if (cb.checked) selectedGuideTopics.add(cb.dataset.topicId);
+        if (cb.checked) nextSelection.add(cb.dataset.topicId);
+        else nextSelection.delete(cb.dataset.topicId);
       });
+      selectedGuideTopics = nextSelection;
       saveGuideTopicSelection();
       updateGuideTopicsWarning();
     }
 
-    function applyGuideTopicsBulk(action) {
-      if (!guideTopicsChecklist) return;
-      guideTopicsChecklist.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
-        if (action === 'all') cb.checked = true;
-        else if (action === 'none') cb.checked = false;
-        else if (action === 'core') cb.checked = GUIDE_CORE_EXAM_TOPICS.has(cb.dataset.topicId);
-      });
+    function getActiveSelectedGuideTopics() {
+      // Returns null only when the loaded guide has no topic taxonomy. Otherwise returns the current selection Set,
+      // which may be empty and should block guide-grounded generation.
+      if (!hasGuideTopicsAvailable()) return null;
       syncSelectedGuideTopicsFromChecklist();
+      return selectedGuideTopics ? new Set(selectedGuideTopics) : new Set();
+    }
+
+    function applyGuideTopicsBulk(action) {
+      if (!hasGuideTopicsAvailable()) return;
+      if (action === 'all') {
+        selectedGuideTopics = new Set(guideTopicAllIdsCache);
+      } else if (action === 'none') {
+        selectedGuideTopics = new Set();
+      } else if (action === 'core') {
+        selectedGuideTopics = new Set(guideTopicAllIdsCache.filter((id) => GUIDE_CORE_EXAM_TOPICS.has(id)));
+      }
+      saveGuideTopicSelection();
+      updateGuideTopicsWarning();
+      renderGuideTopicsChecklist(guideTopicsFilterInput ? guideTopicsFilterInput.value : '');
     }
 
     async function loadGuideKnowledgeFromFile(file) {
@@ -3897,10 +3921,19 @@ window.COHESITY_QUESTION_BANK =
      * Returns up to GUIDE_MAX_CHUNKS chunks, capped at GUIDE_MAX_CONTEXT_CHARS total text.
      * @param {string[]} selectedDomains
      * @param {string} steeringText
-     * @param {Set<string>|null} selectedTopics  — if non-null and non-empty, restricts retrieval
+     * @param {Set<string>|null} selectedTopics  — if non-null and non-empty, strictly restricts retrieval
      */
     function retrieveGuideChunks(selectedDomains, steeringText, selectedTopics = null) {
-      if (!guideKnowledgeData || !Array.isArray(guideKnowledgeData.chunks)) return [];
+      if (!guideKnowledgeData || !Array.isArray(guideKnowledgeData.chunks)) {
+        return {
+          chunks: [],
+          diagnostics: {
+            selectedTopicCount: selectedTopics ? selectedTopics.size : 0,
+            candidateChunkCount: 0,
+            chunkCountSentToLLM: 0,
+          }
+        };
+      }
 
       // Build a normalised set of search terms from domains + steering text
       const rawTerms = [
@@ -3951,10 +3984,15 @@ window.COHESITY_QUESTION_BANK =
       }
 
       const hasTopicFilter = selectedTopics && selectedTopics.size > 0;
+      const candidateChunks = hasTopicFilter
+        ? guideKnowledgeData.chunks.filter((chunk) =>
+            (Array.isArray(chunk.topics) ? chunk.topics : []).some((topic) => selectedTopics.has(topic))
+          )
+        : guideKnowledgeData.chunks;
 
       const questionTargetBoostTerms = new Set(['design', 'architecture', 'implementation', 'troubleshooting', 'supportability', 'security', 'operations']);
 
-      const scored = guideKnowledgeData.chunks.map((chunk) => {
+      const scored = candidateChunks.map((chunk) => {
         let score = 0;
         const chunkTopics = Array.isArray(chunk.topics) ? chunk.topics : [];
         const chunkKeywords = Array.isArray(chunk.keywords) ? chunk.keywords.map((k) => k.toLowerCase()) : [];
@@ -3963,12 +4001,8 @@ window.COHESITY_QUESTION_BANK =
         const chunkText = (chunk.text || '').toLowerCase();
         const signals = chunk.signals || {};
 
-        // Selected-topics boost: very strong preference for checklist-selected topics
-        if (hasTopicFilter) {
-          chunkTopics.forEach((t) => {
-            if (selectedTopics.has(t)) score += 20;
-          });
-        }
+        // Selected-topics boost remains useful for chunks tagged with multiple selected subjects.
+        if (hasTopicFilter) chunkTopics.forEach((t) => { if (selectedTopics.has(t)) score += 20; });
 
         // Strong boost: chunk topics match priority topics derived from domains/steering
         chunkTopics.forEach((t) => {
@@ -4000,17 +4034,8 @@ window.COHESITY_QUESTION_BANK =
       // Sort descending by score, then by chunk id for determinism when scores are equal
       scored.sort((a, b) => b.score - a.score || (a.chunk.id < b.chunk.id ? -1 : a.chunk.id > b.chunk.id ? 1 : 0));
 
-      // When topics are filtered, prefer chunks matching selected topics over the general pool
-      let relevant;
-      if (hasTopicFilter) {
-        const topicFiltered = scored.filter((s) =>
-          s.score > 0 && (Array.isArray(s.chunk.topics) ? s.chunk.topics : []).some((t) => selectedTopics.has(t))
-        );
-        relevant = topicFiltered.length >= GUIDE_MAX_CHUNKS ? topicFiltered : scored.filter((s) => s.score > 0);
-      } else {
-        relevant = scored.filter((s) => s.score > 0);
-      }
-      const pool = relevant.length >= GUIDE_MAX_CHUNKS ? relevant : scored;
+      const relevant = scored.filter((s) => s.score > 0);
+      const pool = relevant.length > 0 ? relevant : scored;
 
       // Select top chunks, capped by char budget. The first chunk is always included
       // regardless of size so we always provide at least one guide excerpt.
@@ -4024,7 +4049,15 @@ window.COHESITY_QUESTION_BANK =
         totalChars += textLen;
       }
 
-      return selected;
+      return {
+        chunks: selected,
+        diagnostics: {
+          selectedTopicCount: hasTopicFilter ? selectedTopics.size : 0,
+          candidateChunkCount: candidateChunks.length,
+          scoredRelevantChunkCount: relevant.length,
+          chunkCountSentToLLM: selected.length,
+        }
+      };
     }
 
     /**
@@ -4039,10 +4072,12 @@ window.COHESITY_QUESTION_BANK =
         const topics = Array.isArray(chunk.topics) ? chunk.topics.join(', ') : '';
         const heading = Array.isArray(chunk.headingPath) && chunk.headingPath.length
           ? chunk.headingPath.join(' > ')
-          : chunk.title || '';
+          : '';
+        const title = chunk.title || heading || 'Untitled excerpt';
         const topicStr = topics ? ` | Topics: ${topics}` : '';
-        const headingStr = heading ? ` | ${heading}` : '';
-        return `[Chunk ${chunk.id} | ${pageRange}${headingStr}${topicStr}]\n${(chunk.text || '').trim()}`;
+        const titleStr = title ? ` | Title: ${title}` : '';
+        const headingStr = heading && heading !== title ? ` | Heading: ${heading}` : '';
+        return `[Chunk ${chunk.id} | ${pageRange}${topicStr}${titleStr}${headingStr}]\n${(chunk.text || '').trim()}`;
       });
       return `Cohesity User Guide excerpts for grounding:\n<guide_context>\n${parts.join('\n\n')}\n</guide_context>`;
     }
@@ -4080,11 +4115,16 @@ window.COHESITY_QUESTION_BANK =
         'If you cannot provide an official Cohesity citation URL for a question, use citationTopic: "Cohesity certification overview / study topic" instead of citationTitle/citationUrl.'
       ];
       if (guideContext) {
-        const topicsStr = selectedTopics && selectedTopics.size > 0
-          ? [...selectedTopics].map((t) => GUIDE_TOPIC_LABELS[t] || t).join(', ')
-          : null;
+        const selectedTopicLabels = selectedTopics && selectedTopics.size > 0
+          ? [...selectedTopics].map((t) => GUIDE_TOPIC_LABELS[t] || t)
+          : [];
         promptSections.push([
           guideContext,
+          ...(selectedTopicLabels.length ? [
+            'Selected Cohesity User Guide subjects for this generation:',
+            ...selectedTopicLabels.map((label) => `- ${label}`),
+            'Generate questions primarily from these selected subjects. Do not generate questions from unselected guide subjects unless required to explain a relationship within the provided excerpts.',
+          ] : []),
           'Use the above Cohesity User Guide excerpts as the primary source-of-truth for product behaviour, feature boundaries, procedures, supportability, commands, warnings, and configuration details.',
           'CRITICAL: For every generated question, the correct answer MUST be directly supported by one or more of the Cohesity User Guide excerpts provided in <guide_context>. Do not make a correct answer rely on external Cohesity knowledge or unsupported inference outside the provided excerpts.',
           'If the provided excerpts do not contain sufficient information to support a correct answer for a requested question, do not generate that question.',
@@ -4094,7 +4134,7 @@ window.COHESITY_QUESTION_BANK =
           'For each question, include at least one of these optional source fields where the guide excerpts support it: "sourceGuideChunkIds" (array of chunk ID strings), "sourceGuidePages" (array of page number strings), "sourceGuideTopics" (array of guide topic strings). Example: {"sourceGuideChunkIds":["c42"],"sourceGuideTopics":["dataprotect"]}.',
           'Guide and exam rules take priority over steering guidance if there is a conflict.',
           'The existing JSON schema, quality, distractor, and multi-select rules remain in full effect.',
-          ...(topicsStr ? [`Emphasize questions covering these selected guide topics: ${topicsStr}.`] : []),
+          ...(selectedTopicLabels.length ? [`Emphasize questions covering these selected guide topics: ${selectedTopicLabels.join(', ')}.`] : []),
         ].join('\n'));
       }
       if (steeringGuidance) {
@@ -5314,7 +5354,8 @@ window.COHESITY_QUESTION_BANK =
       const guideGroundingEnabled = useGuideKnowledgeCheckbox.checked;
       let guideChunks = [];
       let guideContext = '';
-      const activeSelectedTopics = selectedGuideTopics; // Set<string> | null; null treated as all
+      let activeSelectedTopics = null;
+      let guideRetrievalDiagnostics = null;
 
       if (guideGroundingEnabled) {
         // Load guide knowledge if not yet loaded
@@ -5330,21 +5371,25 @@ window.COHESITY_QUESTION_BANK =
           }
         }
 
+        activeSelectedTopics = getActiveSelectedGuideTopics();
+
         // Block generation if no guide topics are selected
         if (activeSelectedTopics && activeSelectedTopics.size === 0) {
-          examStatus.textContent = 'Select at least one guide topic before generating guide-grounded questions. Use the "Guide topics / weighting" panel to enable topics.';
+          examStatus.textContent = 'Select at least one guide subject before generating guide-grounded questions.';
           generateAIButton.disabled = false;
           generateAIButton.textContent = previousLabel;
           return;
         }
 
-        guideChunks = retrieveGuideChunks(selectedDomains, steeringPrompt, activeSelectedTopics);
+        const guideRetrieval = retrieveGuideChunks(selectedDomains, steeringPrompt, activeSelectedTopics);
+        guideChunks = guideRetrieval.chunks;
+        guideRetrievalDiagnostics = guideRetrieval.diagnostics;
         if (guideChunks.length > 0) {
           guideContext = buildGuideContextString(guideChunks);
         } else {
           // Guide loaded but no relevant chunks — surface a clear message and stop
           const noChunksMsg = activeSelectedTopics && activeSelectedTopics.size > 0
-            ? 'No relevant guide chunks found for the selected topics and steering text. Select more topics or broaden the steering guidance.'
+            ? 'No guide chunks found for the selected subjects. Select more subjects or broaden the selection.'
             : 'No relevant guide chunks found for the current settings. Try broadening the steering guidance or domain selection.';
           examStatus.textContent = noChunksMsg;
           generateAIButton.disabled = false;
@@ -5354,13 +5399,26 @@ window.COHESITY_QUESTION_BANK =
       }
 
       const chunkCount = guideChunks.length;
-      const selectedTopicLabels = activeSelectedTopics && activeSelectedTopics.size > 0
-        ? [...activeSelectedTopics].map((t) => GUIDE_TOPIC_LABELS[t] || t)
+      const selectedTopicTags = activeSelectedTopics && activeSelectedTopics.size > 0
+        ? [...activeSelectedTopics]
+        : null;
+      const selectedTopicLabels = selectedTopicTags
+        ? selectedTopicTags.map((t) => GUIDE_TOPIC_LABELS[t] || t)
+        : null;
+      const selectedSubjectSummary = selectedTopicLabels
+        ? (selectedTopicLabels.length > 5
+            ? `${selectedTopicLabels.slice(0, 5).join(', ')} +${selectedTopicLabels.length - 5} more`
+            : selectedTopicLabels.join(', '))
         : null;
       const baseStatusPrefix = guideContext
         ? [
-            `Requesting ${OPENAI_REQUEST_QUESTION_COUNT} guide-grounded AI questions from OpenAI using ${chunkCount} guide chunk${chunkCount === 1 ? '' : 's'}`,
-            selectedTopicLabels ? `across selected topics: ${selectedTopicLabels.slice(0, 5).join(', ')}${selectedTopicLabels.length > 5 ? ` +${selectedTopicLabels.length - 5} more` : ''}` : null,
+            `Generating ${OPENAI_REQUEST_QUESTION_COUNT} guide-grounded AI questions using ${chunkCount} chunk${chunkCount === 1 ? '' : 's'}`,
+            selectedSubjectSummary
+              ? `from ${selectedTopicLabels.length > 5 ? `${selectedTopicLabels.length} selected subjects` : `selected subjects: ${selectedSubjectSummary}`}`
+              : null,
+            guideRetrievalDiagnostics
+              ? `(candidates after topic filtering: ${guideRetrievalDiagnostics.candidateChunkCount || 0}; chunks sent to the LLM: ${guideRetrievalDiagnostics.chunkCountSentToLLM || 0})`
+              : null,
             '— correct answers must be supported by the guide excerpts.',
           ].filter(Boolean).join(' ')
         : `Requesting ${OPENAI_REQUEST_QUESTION_COUNT} AI questions from OpenAI...`;
@@ -5504,10 +5562,11 @@ window.COHESITY_QUESTION_BANK =
           statusMessage += ` Generated AI questions ${DEFAULT_TEMPERATURE_SUFFIX} because this model does not support custom temperature.`;
         }
         if (guideContext) {
-          const topicsDisplay = selectedTopicLabels
-            ? selectedTopicLabels.slice(0, 5).join(', ') + (selectedTopicLabels.length > 5 ? ` +${selectedTopicLabels.length - 5} more` : '')
-            : null;
-          statusMessage += ` Generated using Cohesity User Guide grounding from ${chunkCount} chunk${chunkCount === 1 ? '' : 's'}${topicsDisplay ? ` (topics: ${topicsDisplay})` : ''}.`;
+          const topicsDisplay = selectedSubjectSummary;
+          const diagnosticsText = guideRetrievalDiagnostics
+            ? ` Candidates after topic filtering: ${guideRetrievalDiagnostics.candidateChunkCount || 0}; chunks sent to the LLM: ${guideRetrievalDiagnostics.chunkCountSentToLLM || 0}.`
+            : '';
+          statusMessage += ` Generated using Cohesity User Guide grounding from ${chunkCount} chunk${chunkCount === 1 ? '' : 's'}${topicsDisplay ? ` (selected subjects: ${topicsDisplay})` : ''}.${diagnosticsText}`;
           if (questionsWithFallbackSourceMeta > 0) {
             warningMessage = warningMessage
               ? `${warningMessage} Some guide-grounded questions did not include exact source chunk metadata; generation-level guide context metadata was preserved instead.`
@@ -5544,7 +5603,8 @@ window.COHESITY_QUESTION_BANK =
               guideContextPages: guideChunks.map((c) => c.pageStart === c.pageEnd ? String(c.pageStart) : `${c.pageStart}-${c.pageEnd}`),
               guideContextChunkCount: chunkCount,
               guideContextTopics: [...new Set(guideChunks.flatMap((c) => Array.isArray(c.topics) ? c.topics : []))],
-              ...(selectedTopicLabels ? { guideSelectedTopics: selectedTopicLabels } : {}),
+              ...(selectedTopicTags ? { guideSelectedTopics: selectedTopicTags, guideSelectedTopicLabels: selectedTopicLabels } : {}),
+              ...(guideRetrievalDiagnostics ? { guideRetrievalDiagnostics } : {}),
               questionsWithExactSourceMeta,
               questionsWithFallbackSourceMeta,
             } : { guideGrounded: false })
