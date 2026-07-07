@@ -316,7 +316,7 @@
 
 <div class="page-header">
   <h1>🗂 Cohesity User Guide Parser</h1>
-  <p>Select <code>74_UserGuide_extracted.md</code>, configure options, and download structured JSON &mdash; all in your browser. No Node.js or command line required.</p>
+  <p>Select <code>74_UserGuide_extracted.md</code>, configure options, and download structured JSON &mdash; all in your browser. No Node.js or command-line required.</p>
 </div>
 
 <div class="container">
@@ -724,9 +724,9 @@ async function buildChunks(pages, maxChunkChars, overlapChars, onProgress) {
     acc = newAcc(nextPage, seed);
   }
 
-  const yieldEvery = 200; // yield every N pages
+  const PAGES_PER_YIELD = 200; // yield to browser every N pages
   for (let pi = 0; pi < pages.length; pi++) {
-    if (pi % yieldEvery === 0) {
+    if (pi % PAGES_PER_YIELD === 0) {
       onProgress(pi, pages.length);
       await yieldToBrowser();
     }

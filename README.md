@@ -183,7 +183,7 @@ npm, terminal, or local server is required.
    - **Overlap chars** — default `600`
    - **Pretty-print JSON** — checked by default (uncheck for a smaller file)
    - **Include inverted keyword index** — optional, increases file size
-4. Click **Parse &amp; Generate JSON**.
+4. Click **Parse & Generate JSON**.
 5. Watch the status log for progress. Summary statistics appear when complete.
 6. Click **Download JSON** to save `cohesity-user-guide-knowledge.json` locally.
 7. Upload or commit the generated JSON file to the repository when ready.
