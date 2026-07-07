@@ -140,13 +140,34 @@ function classifyQuestionTargets(topics, text) {
 
 // ─── Difficulty signals ───────────────────────────────────────────────────────
 
+// Common English words to exclude from proper-noun keyword extraction
+const PROPER_NOUN_STOP_WORDS = new Set([
+  'This','That','The','And','For','With','From','When','Where','Which',
+  'How','What','Who','But','Not','All','Any','Its','Our','Your','Their',
+  'Each','Some','More','Also','Next','Then','Here','Note','Step','See',
+  'Use','Used','After','Before','While','Since','Under','Over','Into',
+  'About','Above','Below','Between','Within','Without','During','After',
+  'Before','Using','Click','Select','Enter','Type','Press','Check',
+]);
+
+// Units to detect in numeric values (limits/constraints)
+const VALUE_UNITS = [
+  'gb','tb','pb','mb','kb','ms','sec','min','hour','day','week','month',
+  'year','node','port','vlan','mhz','ghz','vcpu','vm','rpm','watt','iops',
+  'mbps','gbps','%',
+];
+const VALUE_UNITS_REGEX = new RegExp(
+  `\\d+\\s*(${VALUE_UNITS.join('|')})`,
+  'gi'
+);
+
 function computeDifficultySignals(text) {
   const signals = [];
   if (/\b(limit|maximum|minimum|threshold|capacity)\b/i.test(text)) signals.push('has-limits-or-values');
   if (/\bwarn(ing)?\b|\bnote\b|\bcaution\b|\bimportant\b/i.test(text))  signals.push('has-warnings-or-notes');
   if (/\$ |iris_cli|cohesity_cli|^\s{4}/m.test(text))                   signals.push('has-command');
   if (/\|.*\|/m.test(text))                                              signals.push('has-table');
-  if (/^\d+\.|^- |^\* |^•/m.test(text))                                  signals.push('has-procedure');
+  if (/^\d+\.\s|^[-*•]\s/m.test(text))                                  signals.push('has-procedure');
   return signals;
 }
 
@@ -176,16 +197,16 @@ function extractKeywords(text, headingPath) {
     if (combined.includes(term.toLowerCase())) found.add(term);
   }
 
-  // Extract capitalized words / product names (likely proper nouns) from original text
+  // Extract capitalized words / product names (likely proper nouns) from original-case text
   const properNouns = [text, ...headingPath].join(' ').match(/\b[A-Z][a-z]{2,}\b/g) || [];
   for (const w of properNouns) {
-    if (w.length > 3 && !['This','That','The','And','For','With','From','When','Where','Which','How','What'].includes(w)) {
+    if (w.length > 3 && !PROPER_NOUN_STOP_WORDS.has(w)) {
       found.add(w.toLowerCase());
     }
   }
 
   // Numbers with units (limits, values)
-  const values = text.match(/\d+\s*(gb|tb|pb|mb|ms|sec|min|hour|day|week|month|year|node|port|vlan|mhz|ghz|vcpu|vm|\%)/gi) || [];
+  const values = text.match(VALUE_UNITS_REGEX) || [];
   for (const v of values) found.add(v.toLowerCase());
 
   return Array.from(found).slice(0, 30);
@@ -602,7 +623,13 @@ function main() {
 
   // ── Anomaly detection ──
   const anomalies = [];
-  if (pageCount < 100)    anomalies.push(`Only ${pageCount} pages detected — expected ~4970 for this guide`);
+  // Use PDF pages from source metadata if available, otherwise just check we have some pages
+  const expectedPages = sourceMeta.pdfPages || 0;
+  if (pageCount < 100) {
+    anomalies.push(`Only ${pageCount} pages detected — check that the input file contains ## Page N markers`);
+  } else if (expectedPages > 0 && Math.abs(pageCount - expectedPages) > expectedPages * 0.1) {
+    anomalies.push(`Detected ${pageCount} pages but source metadata reports ${expectedPages} PDF pages — extraction may be incomplete`);
+  }
   if (toc.length < 5)     anomalies.push('Fewer than 5 TOC entries found — TOC extraction may have failed');
   if (maxChunkSize > opts.maxChunkChars * 1.5) anomalies.push(`Largest chunk (${maxChunkSize}) is significantly over maxChunkChars — check overlap/splitting`);
   if (anomalies.length > 0) {

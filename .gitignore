@@ -1,5 +1,6 @@
 # Generated parser output
-# The parse-user-guide.js script produces a large JSON file (~15–25 MB).
+# The parse-user-guide.js script produces a large JSON file (approximately
+# 14–20 MB with default settings; see README for details).
 # It is intentionally excluded from the repository by default so it is not
 # accidentally committed. The user should run the parser locally and then
 # either:
