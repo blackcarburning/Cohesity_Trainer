@@ -3774,7 +3774,7 @@ window.COHESITY_QUESTION_BANK =
       return query;
     }
 
-    function sanitizeSteeringPrompt(raw) {
+    function sanitizeSteeringPrompt(raw, { trim = true } = {}) {
       if (typeof raw !== 'string') return '';
       let prompt = raw
         // Remove most control characters and DEL while preserving tab/newline/carriage return.
@@ -3790,7 +3790,9 @@ window.COHESITY_QUESTION_BANK =
         .replace(/(^|\n)\s*---+\s*($|\n)/g, '\n')
         .replace(/<\/?steering>/gi, '')
         .replace(/\b(ignore|disregard|override)\b[\s\S]{0,80}\b(instruction|prompt|rule)s?\b/gi, ' ');
-      prompt = prompt.trim();
+      if (trim) {
+        prompt = prompt.trim();
+      }
       if (prompt.length > STEERING_PROMPT_MAX_LENGTH) {
         prompt = prompt.slice(0, STEERING_PROMPT_MAX_LENGTH);
       }
@@ -3822,7 +3824,7 @@ window.COHESITY_QUESTION_BANK =
 
     function saveSteeringPrompt() {
       const raw = aiSteeringPromptInput.value;
-      const sanitized = sanitizeSteeringPrompt(raw);
+      const sanitized = sanitizeSteeringPrompt(raw, { trim: false });
       if (sanitized !== raw) aiSteeringPromptInput.value = sanitized;
       if (sanitized) {
         lsSet(LS_AI_STEERING_PROMPT, sanitized);
