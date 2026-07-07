@@ -3945,6 +3945,7 @@ window.COHESITY_QUESTION_BANK =
           `Priority topics derived from domains/steering: ${Array.isArray(diagnostics.priorityTopics) && diagnostics.priorityTopics.length ? diagnostics.priorityTopics.join(', ') : '(none)'}`,
           `Candidate chunks after selected-subject filtering: ${diagnostics.candidateChunkCount || 0}`,
           `Scored relevant chunks: ${diagnostics.scoredRelevantChunkCount || 0}`,
+          `Randomization pool size (top-scored candidates shuffled): ${diagnostics.randomPoolSize || 0}`,
           `Chunks included in guide context: ${snapshot.guideChunks.length} / ${GUIDE_MAX_CHUNKS}`,
           `Guide context character count sent to the LLM: ${snapshot.contextPayload.totalContextChars} / ${GUIDE_MAX_CONTEXT_CHARS}`,
           'Chunk metadata included in the current guide context:',
@@ -4216,13 +4217,27 @@ window.COHESITY_QUESTION_BANK =
       scored.sort((a, b) => b.score - a.score || (a.chunk.id < b.chunk.id ? -1 : a.chunk.id > b.chunk.id ? 1 : 0));
 
       const relevant = scored.filter((s) => s.score > 0);
-      const pool = relevant.length > 0 ? relevant : scored;
+      const basePool = relevant.length > 0 ? relevant : scored;
 
-      // Select top chunks, capped by char budget. The first chunk is always included
-      // regardless of size so we always provide at least one guide excerpt.
+      // Randomize chunk selection to avoid question repetition across generations.
+      // Take the top GUIDE_MAX_CHUNKS * 3 candidates by score (preserving relevance),
+      // then Fisher-Yates shuffle within that bounded pool so each generation request
+      // draws a different set of chunks from the eligible subject-matching pool.
+      const RANDOM_POOL_MULTIPLIER = 3;
+      const randomPoolSize = GUIDE_MAX_CHUNKS * RANDOM_POOL_MULTIPLIER;
+      const randomizedPool = basePool.slice(0, randomPoolSize);
+      for (let i = randomizedPool.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const tmp = randomizedPool[i];
+        randomizedPool[i] = randomizedPool[j];
+        randomizedPool[j] = tmp;
+      }
+
+      // Select chunks from the randomized pool, capped by char budget. The first chunk
+      // is always included regardless of size so we always provide at least one guide excerpt.
       const selected = [];
       let totalChars = 0;
-      for (const { chunk } of pool) {
+      for (const { chunk } of randomizedPool) {
         if (selected.length >= GUIDE_MAX_CHUNKS) break;
         const contextEntry = buildGuideChunkContextEntry(chunk);
         const textLen = contextEntry.entryText.length;
@@ -4237,6 +4252,7 @@ window.COHESITY_QUESTION_BANK =
           selectedTopicCount: hasTopicFilter ? selectedTopics.size : 0,
           candidateChunkCount: candidateChunks.length,
           scoredRelevantChunkCount: relevant.length,
+          randomPoolSize: randomizedPool.length,
           chunkCountSentToLLM: selected.length,
           totalContextChars: totalChars,
           terms,
@@ -4303,6 +4319,7 @@ window.COHESITY_QUESTION_BANK =
           'Prefer difficult scenario-based, design, implementation-detail, troubleshooting, and feature-boundary questions grounded in the provided guide material.',
           'For each question, include at least one of these optional source fields where the guide excerpts support it: "sourceGuideChunkIds" (array of chunk ID strings), "sourceGuidePages" (array of page number strings), "sourceGuideTopics" (array of guide topic strings). Example: {"sourceGuideChunkIds":["c42"],"sourceGuideTopics":["dataprotect"]}.',
           'If you include sourceGuideTopics, every topic value MUST come from the selected guide-subject list above and from the supporting chunk metadata in <guide_context>.',
+          'IMPORTANT — Guide-grounded citation rule: For all guide-grounded questions use citationTopic (not citationUrl/citationTitle) referencing the Cohesity User Guide, e.g. "Cohesity User Guide — <topic>". Do NOT invent or fabricate Cohesity website URLs. The app will display the sourceGuideChunkIds/sourceGuidePages/sourceGuideTopics as the citation, so omit citationUrl for these questions.',
           'Guide and exam rules take priority over steering guidance if there is a conflict.',
           'The existing JSON schema, quality, distractor, and multi-select rules remain in full effect.',
           ...(selectedTopicLabels.length ? [`Emphasize questions covering these selected guide topics: ${selectedTopicLabels.join(', ')}.`] : []),
@@ -5060,6 +5077,29 @@ window.COHESITY_QUESTION_BANK =
     }
 
     function citationMarkup(question) {
+      // For guide-grounded questions show chunk-based citation metadata instead of generic URLs.
+      const hasGuideSource = (
+        (Array.isArray(question.sourceGuideChunkIds) && question.sourceGuideChunkIds.length > 0) ||
+        (Array.isArray(question.sourceGuidePages) && question.sourceGuidePages.length > 0) ||
+        (Array.isArray(question.sourceGuideTopics) && question.sourceGuideTopics.length > 0)
+      );
+      if (hasGuideSource) {
+        const span = document.createElement('span');
+        const parts = ['Cohesity User Guide'];
+        if (Array.isArray(question.sourceGuideTopics) && question.sourceGuideTopics.length > 0) {
+          const topicLabels = question.sourceGuideTopics.map((t) => GUIDE_TOPIC_LABELS[t] || t);
+          parts.push(topicLabels.join(', '));
+        }
+        if (Array.isArray(question.sourceGuidePages) && question.sourceGuidePages.length > 0) {
+          parts.push(`p.\u202f${question.sourceGuidePages.join(', ')}`);
+        }
+        if (Array.isArray(question.sourceGuideChunkIds) && question.sourceGuideChunkIds.length > 0) {
+          const label = question.sourceGuideChunkIds.length > 1 ? 'chunks' : 'chunk';
+          parts.push(`${label}\u202f${question.sourceGuideChunkIds.join(', ')}`);
+        }
+        span.textContent = parts.join(' \u2014 ');
+        return span;
+      }
       if (question.citationUrl && question.citationTitle) {
         const anchor = document.createElement('a');
         anchor.href = question.citationUrl;
