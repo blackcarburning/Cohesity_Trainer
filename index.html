@@ -394,11 +394,12 @@
           <div class="button-row">
             <button id="loadHistoryButton" type="button" class="secondary">Load selected set</button>
             <button id="exportHistorySetButton" type="button" class="ghost" aria-label="Export the currently selected question set as a JSON file">Export selected set</button>
-            <button id="importHistorySetButton" type="button" class="ghost" aria-label="Import a question set JSON file">Import set</button>
+            <button id="importHistorySetButton" type="button" class="ghost" aria-label="Import a question set JSON file" aria-describedby="importHistorySetHelp">Import set</button>
             <input id="importHistorySetFileInput" type="file" accept="application/json,.json" style="display:none;" aria-hidden="true" />
             <button id="deleteSelectedSetsButton" type="button" class="ghost">Delete selected</button>
             <button id="clearHistoryButton" type="button" class="ghost">Clear all history</button>
           </div>
+          <p id="importHistorySetHelp" class="help" style="margin-top:6px;">Import set accepts JSON files exported by this app's "Export selected set" feature.</p>
         </section>
 
         <section id="statsPanel" class="panel" aria-labelledby="stats-heading">
@@ -3616,6 +3617,7 @@ window.COHESITY_QUESTION_BANK =
     const LS_AI_STEERING_PROMPT = 'cohesityExamAiGenerationSteeringPrompt';
     const LS_HISTORY   = 'cohesityExamHistory';
     const MAX_HISTORY  = 25;
+    const MAX_DISPLAY_DOMAINS = 3; // max domains shown in history list entry before truncation
     const APP_VERSION  = 1;
     const SOURCE_AI_GENERATED = 'AI generated';
     const DISPLAY_EXAM_QUESTION_COUNT = 50;
@@ -4465,6 +4467,10 @@ window.COHESITY_QUESTION_BANK =
       return isoString ? isoString.slice(0, 16).replace('T', ' ') : '';
     }
 
+    function sanitizeFilenameSlug(name, maxLength) {
+      return name.replace(/[^a-z0-9]/gi, '-').replace(/-+/g, '-').slice(0, maxLength).replace(/-$/, '');
+    }
+
     // ── API key sanitization and validation ──────────────────────────────────
     /**
      * Sanitize a raw API key string to remove characters that would cause
@@ -4854,7 +4860,7 @@ window.COHESITY_QUESTION_BANK =
         const dateStr = formatShortDateTime(entry.generatedAt);
         const modelPart = entry.model ? ` · ${entry.model}` : '';
         const domainsStr = Array.isArray(entry.domains) && entry.domains.length
-          ? ` · ${entry.domains.slice(0, 3).join(', ')}${entry.domains.length > 3 ? '\u2026' : ''}`
+          ? ` · ${entry.domains.slice(0, MAX_DISPLAY_DOMAINS).join(', ')}${entry.domains.length > MAX_DISPLAY_DOMAINS ? '\u2026' : ''}`
           : '';
 
         const primaryText = entry.name || `${entry.source}${modelPart}`;
@@ -4957,7 +4963,7 @@ window.COHESITY_QUESTION_BANK =
       const dateSlug = (entry.generatedAt && /^\d{4}-\d{2}-\d{2}/.test(entry.generatedAt))
         ? entry.generatedAt.slice(0, 10)
         : new Date().toISOString().slice(0, 10);
-      const namePart = entry.name ? `-${entry.name.replace(/[^a-z0-9]/gi, '-').replace(/-+/g, '-').slice(0, 40).replace(/-$/, '')}` : '';
+      const namePart = entry.name ? `-${sanitizeFilenameSlug(entry.name, 40)}` : '';
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -5006,13 +5012,14 @@ window.COHESITY_QUESTION_BANK =
           return;
         }
 
-        // Validate/normalize each question
+        // Validate/normalize each question; count skipped for user feedback
         const validQuestions = [];
+        let skippedQuestionCount = 0;
         rawSet.questions.forEach((q, i) => {
           try {
             validQuestions.push(normalizeQuestion(q, `Imported question ${i + 1}`));
           } catch {
-            // skip malformed questions silently
+            skippedQuestionCount += 1;
           }
         });
 
@@ -5023,7 +5030,7 @@ window.COHESITY_QUESTION_BANK =
 
         // Prompt user for a display name before saving
         const userInput = prompt(
-          `Name this imported question set (${validQuestions.length} questions):\n\nLeave blank to use the filename as the name, or Cancel to abort the import.`,
+          `Name this imported question set (${validQuestions.length} question${validQuestions.length === 1 ? '' : 's'}${skippedQuestionCount ? `; ${skippedQuestionCount} invalid question${skippedQuestionCount === 1 ? '' : 's'} will be skipped` : ''}):\n\nLeave blank to use the filename as the name, or Cancel to abort the import.`,
           rawSet.name || defaultName
         );
         // null means user pressed Cancel
@@ -5032,6 +5039,15 @@ window.COHESITY_QUESTION_BANK =
           return;
         }
         const chosenName = userInput.trim() || defaultName;
+
+        // Merge known metadata fields; use Object.assign to avoid unexpected prototype properties
+        const existingMeta = (rawSet.metadata && typeof rawSet.metadata === 'object' && !Array.isArray(rawSet.metadata))
+          ? Object.assign({}, rawSet.metadata) : {};
+        Object.assign(existingMeta, {
+          importedAt: new Date().toISOString(),
+          importedFromFile: file.name,
+          originalSource: (typeof rawSet.source === 'string' && rawSet.source.trim()) ? rawSet.source : null
+        });
 
         const newEntry = {
           id: createHistoryId(),
@@ -5042,12 +5058,7 @@ window.COHESITY_QUESTION_BANK =
           model: (typeof rawSet.model === 'string' && rawSet.model.trim()) ? rawSet.model : null,
           questionCount: validQuestions.length,
           questions: validQuestions,
-          metadata: {
-            importedAt: new Date().toISOString(),
-            importedFromFile: file.name,
-            originalSource: (typeof rawSet.source === 'string' && rawSet.source.trim()) ? rawSet.source : null,
-            ...(rawSet.metadata && typeof rawSet.metadata === 'object' && !Array.isArray(rawSet.metadata) ? rawSet.metadata : {})
-          }
+          metadata: existingMeta
         };
 
         const existingHistory = loadHistory();
@@ -5057,6 +5068,7 @@ window.COHESITY_QUESTION_BANK =
         const saved = lsSet(LS_HISTORY, newHistory);
 
         let msg = `Imported "${chosenName}" with ${validQuestions.length} questions.`;
+        if (skippedQuestionCount) msg += ` (${skippedQuestionCount} invalid question${skippedQuestionCount === 1 ? '' : 's'} skipped.)`;
         if (!saved) msg += ` ${HISTORY_SAVE_WARNING}`;
         examStatus.textContent = msg;
 
@@ -6585,10 +6597,13 @@ window.COHESITY_QUESTION_BANK =
     clearHistoryButton.addEventListener('click', clearAllHistory);
     deleteSelectedSetsButton.addEventListener('click', deleteSelectedHistorySets);
     historySelectAllBtn.addEventListener('click', () => {
-      historyListContainer.querySelectorAll('.hist-cb').forEach(cb => { cb.checked = true; });
+      const cbs = historyListContainer.querySelectorAll('.hist-cb');
+      cbs.forEach(cb => { cb.checked = true; });
+      if (cbs.length) examStatus.textContent = `All ${cbs.length} saved sets selected.`;
     });
     historyClearSelectionBtn.addEventListener('click', () => {
       historyListContainer.querySelectorAll('.hist-cb').forEach(cb => { cb.checked = false; });
+      examStatus.textContent = 'Selection cleared.';
     });
     importHistorySetButton.addEventListener('click', () => { importHistorySetFileInput.click(); });
     importHistorySetFileInput.addEventListener('change', () => {
