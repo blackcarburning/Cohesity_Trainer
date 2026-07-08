@@ -385,18 +385,21 @@
 
         <section id="historyPanel" class="panel" aria-labelledby="history-heading" hidden>
           <h2 id="history-heading">Saved exam history</h2>
-          <p class="help">Select a previously generated set to reload it. History is saved in browser local storage (most recent 25 sets kept). Loading a saved set resets all current answer selections.</p>
-          <div class="controls-row">
-            <div style="flex:1;min-width:0;">
-              <label for="historySelect">Saved sets (most recent first)</label>
-              <select id="historySelect" style="max-width:none;width:100%;"></select>
-            </div>
+          <p class="help">Check one saved set to load or export it. Check one or more sets to delete them. History is saved in browser local storage (most recent 25 sets kept). Loading a saved set resets all current answer selections.</p>
+          <div id="historyListContainer" style="max-height:280px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:2px 0;" role="list" aria-label="Saved question sets"></div>
+          <div class="button-row" style="margin-top:8px;gap:6px;">
+            <button id="historySelectAllBtn" type="button" class="ghost" style="font-size:0.9rem;padding:8px 12px;">Select all</button>
+            <button id="historyClearSelectionBtn" type="button" class="ghost" style="font-size:0.9rem;padding:8px 12px;">Clear selection</button>
           </div>
           <div class="button-row">
             <button id="loadHistoryButton" type="button" class="secondary">Load selected set</button>
             <button id="exportHistorySetButton" type="button" class="ghost" aria-label="Export the currently selected question set as a JSON file">Export selected set</button>
+            <button id="importHistorySetButton" type="button" class="ghost" aria-label="Import a question set JSON file" aria-describedby="importHistorySetHelp">Import set</button>
+            <input id="importHistorySetFileInput" type="file" accept="application/json,.json" style="display:none;" aria-hidden="true" />
+            <button id="deleteSelectedSetsButton" type="button" class="ghost">Delete selected</button>
             <button id="clearHistoryButton" type="button" class="ghost">Clear all history</button>
           </div>
+          <p id="importHistorySetHelp" class="help" style="margin-top:6px;">Import set accepts JSON files exported by this app's "Export selected set" feature.</p>
         </section>
 
         <section id="statsPanel" class="panel" aria-labelledby="stats-heading">
@@ -3583,9 +3586,14 @@ window.COHESITY_QUESTION_BANK =
     const examStatus = document.getElementById('examStatus');
     const timerPill = document.getElementById('timerPill');
     const historyPanel = document.getElementById('historyPanel');
-    const historySelect = document.getElementById('historySelect');
+    const historyListContainer = document.getElementById('historyListContainer');
+    const historySelectAllBtn = document.getElementById('historySelectAllBtn');
+    const historyClearSelectionBtn = document.getElementById('historyClearSelectionBtn');
     const loadHistoryButton = document.getElementById('loadHistoryButton');
     const exportHistorySetButton = document.getElementById('exportHistorySetButton');
+    const importHistorySetButton = document.getElementById('importHistorySetButton');
+    const importHistorySetFileInput = document.getElementById('importHistorySetFileInput');
+    const deleteSelectedSetsButton = document.getElementById('deleteSelectedSetsButton');
     const clearHistoryButton = document.getElementById('clearHistoryButton');
     const statsContent = document.getElementById('statsContent');
     const useGuideKnowledgeCheckbox = document.getElementById('useGuideKnowledgeCheckbox');
@@ -3609,6 +3617,7 @@ window.COHESITY_QUESTION_BANK =
     const LS_AI_STEERING_PROMPT = 'cohesityExamAiGenerationSteeringPrompt';
     const LS_HISTORY   = 'cohesityExamHistory';
     const MAX_HISTORY  = 25;
+    const MAX_DISPLAY_DOMAINS = 3; // max domains shown in history list entry before truncation
     const APP_VERSION  = 1;
     const SOURCE_AI_GENERATED = 'AI generated';
     const DISPLAY_EXAM_QUESTION_COUNT = 50;
@@ -4458,6 +4467,10 @@ window.COHESITY_QUESTION_BANK =
       return isoString ? isoString.slice(0, 16).replace('T', ' ') : '';
     }
 
+    function sanitizeFilenameSlug(name, maxLength) {
+      return name.replace(/[^a-z0-9]/gi, '-').replace(/-+/g, '-').slice(0, maxLength).replace(/-$/, '');
+    }
+
     // ── API key sanitization and validation ──────────────────────────────────
     /**
      * Sanitize a raw API key string to remove characters that would cause
@@ -4800,35 +4813,92 @@ window.COHESITY_QUESTION_BANK =
       };
     }
 
-    function renderHistoryDropdown() {
+    // ── History list helpers ─────────────────────────────────────────────────
+    function getCheckedHistoryIds() {
+      return Array.from(historyListContainer.querySelectorAll('.hist-cb:checked')).map(cb => cb.value);
+    }
+
+    function getOneSelectedHistoryEntry() {
+      const ids = getCheckedHistoryIds();
+      if (ids.length === 0) {
+        examStatus.textContent = 'Check one saved set in the list first.';
+        return null;
+      }
+      if (ids.length > 1) {
+        examStatus.textContent = 'Please check only one set to load or export (multiple sets are checked).';
+        return null;
+      }
       const history = loadHistory();
-      historySelect.innerHTML = '';
+      const entry = history.find(e => e.id === ids[0]);
+      if (!entry) {
+        examStatus.textContent = 'Could not find the selected set — it may have been removed.';
+        return null;
+      }
+      return entry;
+    }
+
+    function renderHistoryList() {
+      const history = loadHistory();
+      historyListContainer.innerHTML = '';
       if (!history.length) {
         historyPanel.hidden = true;
         return;
       }
-      const placeholder = document.createElement('option');
-      placeholder.value = '';
-      placeholder.textContent = '— Select a saved set —';
-      historySelect.appendChild(placeholder);
       history.forEach(entry => {
+        const item = document.createElement('div');
+        item.setAttribute('role', 'listitem');
+        item.style.cssText = 'display:flex;align-items:flex-start;gap:8px;padding:7px 10px;border-bottom:1px solid var(--border);';
+
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.className = 'hist-cb';
+        cb.id = `hist-cb-${entry.id}`;
+        cb.value = entry.id;
+        cb.style.cssText = 'margin-top:3px;flex-shrink:0;cursor:pointer;';
+
+        const qCount = Array.isArray(entry.questions) ? entry.questions.length : (entry.questionCount || 0);
         const dateStr = formatShortDateTime(entry.generatedAt);
-        const modelPart = entry.model ? ` — ${entry.model}` : '';
-        const label = `${dateStr} — ${entry.source}${modelPart} — ${entry.questions.length} questions`;
-        const opt = document.createElement('option');
-        opt.value = entry.id;
-        opt.textContent = label;
-        historySelect.appendChild(opt);
+        const modelPart = entry.model ? ` · ${entry.model}` : '';
+        const domainsStr = Array.isArray(entry.domains) && entry.domains.length
+          ? ` · ${entry.domains.slice(0, MAX_DISPLAY_DOMAINS).join(', ')}${entry.domains.length > MAX_DISPLAY_DOMAINS ? '\u2026' : ''}`
+          : '';
+
+        const primaryText = entry.name || `${entry.source}${modelPart}`;
+        const secondaryText = `${dateStr} · ${entry.name ? entry.source + modelPart + ' · ' : ''}${qCount} questions${domainsStr}`;
+
+        cb.setAttribute('aria-label', `Select: ${primaryText} — ${secondaryText}`);
+
+        const lbl = document.createElement('label');
+        lbl.setAttribute('for', `hist-cb-${entry.id}`);
+        lbl.style.cssText = 'cursor:pointer;flex:1;font-weight:normal;line-height:1.4;';
+
+        const primarySpan = document.createElement('span');
+        primarySpan.style.fontWeight = '600';
+        primarySpan.textContent = primaryText;
+
+        const br = document.createElement('br');
+
+        const secondarySpan = document.createElement('span');
+        secondarySpan.style.cssText = 'font-size:0.85rem;color:var(--muted);';
+        secondarySpan.textContent = secondaryText;
+
+        lbl.appendChild(primarySpan);
+        lbl.appendChild(br);
+        lbl.appendChild(secondarySpan);
+        item.appendChild(cb);
+        item.appendChild(lbl);
+        historyListContainer.appendChild(item);
       });
       historyPanel.hidden = false;
     }
 
+    // Keep alias so any future callers remain valid
+    function renderHistoryDropdown() { renderHistoryList(); }
+
     function loadHistorySet() {
-      const id = historySelect.value;
-      if (!id) { examStatus.textContent = 'Select a saved set from the dropdown first.'; return; }
-      const history = loadHistory();
-      const entry = history.find(e => e.id === id);
-      if (!entry || !Array.isArray(entry.questions) || !entry.questions.length) {
+      const entry = getOneSelectedHistoryEntry();
+      if (!entry) return;
+      if (!Array.isArray(entry.questions) || !entry.questions.length) {
         examStatus.textContent = 'Could not load the selected set — data may be corrupt.';
         return;
       }
@@ -4839,7 +4909,8 @@ window.COHESITY_QUESTION_BANK =
       const savedGuideContextEntries = Array.isArray(entry.metadata?.guideContextEntries)
         ? entry.metadata.guideContextEntries
         : null;
-      loadQuestionsIntoExam(questions, `Loaded saved set from ${new Date(entry.generatedAt).toLocaleString()} (${questions.length} questions).`, savedGuideContextEntries);
+      const setLabel = entry.name || `${entry.source} from ${new Date(entry.generatedAt).toLocaleString()}`;
+      loadQuestionsIntoExam(questions, `Loaded saved set: ${setLabel} (${questions.length} questions).`, savedGuideContextEntries);
       renderStatsPanel();
     }
 
@@ -4847,26 +4918,40 @@ window.COHESITY_QUESTION_BANK =
       if (!confirm('Clear all saved exam history from local storage? This cannot be undone.')) return;
       lsRemove(LS_HISTORY);
       sessionHistoryFallback = [];
-      renderHistoryDropdown();
+      renderHistoryList();
       renderStatsPanel();
       examStatus.textContent = 'Exam history cleared.';
     }
 
-    // ── Export single history set ─────────────────────────────────────────────
-    function exportHistorySet() {
-      const id = historySelect.value;
-      if (!id) {
-        examStatus.textContent = 'Select a saved set from the dropdown first, then click Export selected set.';
+    // ── Delete selected history sets ─────────────────────────────────────────
+    function deleteSelectedHistorySets() {
+      const ids = getCheckedHistoryIds();
+      if (!ids.length) {
+        examStatus.textContent = 'No sets are checked. Check one or more sets in the list to delete them.';
         return;
       }
-      const history = loadHistory();
-      const entry = history.find(e => e.id === id);
-      if (!entry || !Array.isArray(entry.questions) || !entry.questions.length) {
+      const plural = ids.length === 1 ? 'set' : 'sets';
+      if (!confirm(`Delete ${ids.length} checked question ${plural} from history? This cannot be undone.`)) return;
+      const idSet = new Set(ids);
+      const newHistory = loadHistory().filter(e => !idSet.has(e.id));
+      sessionHistoryFallback = newHistory;
+      lsSet(LS_HISTORY, newHistory);
+      renderHistoryList();
+      renderStatsPanel();
+      examStatus.textContent = `Deleted ${ids.length} question ${plural} from history.`;
+    }
+
+    // ── Export single history set ─────────────────────────────────────────────
+    function exportHistorySet() {
+      const entry = getOneSelectedHistoryEntry();
+      if (!entry) return;
+      if (!Array.isArray(entry.questions) || !entry.questions.length) {
         examStatus.textContent = 'Could not export the selected set — data may be corrupt.';
         return;
       }
       const payload = {
         exportedAt: new Date().toISOString(),
+        name: entry.name || null,
         generatedAt: entry.generatedAt,
         source: entry.source,
         domains: entry.domains,
@@ -4878,16 +4963,124 @@ window.COHESITY_QUESTION_BANK =
       const dateSlug = (entry.generatedAt && /^\d{4}-\d{2}-\d{2}/.test(entry.generatedAt))
         ? entry.generatedAt.slice(0, 10)
         : new Date().toISOString().slice(0, 10);
+      const namePart = entry.name ? `-${sanitizeFilenameSlug(entry.name, 40)}` : '';
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `cohesity-question-set-${dateSlug}.json`;
+      a.download = `cohesity-question-set${namePart}-${dateSlug}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      examStatus.textContent = `Exported "${historySelect.options[historySelect.selectedIndex].textContent}" as JSON.`;
+      const displayLabel = entry.name || `${entry.source} (${dateSlug})`;
+      examStatus.textContent = `Exported "${displayLabel}" as JSON.`;
+    }
+
+    // ── Import single question set JSON ──────────────────────────────────────
+    function importSingleHistorySet(file) {
+      if (!file) return;
+      const defaultName = file.name.replace(/\.json$/i, '').replace(/[_-]/g, ' ').trim()
+        || `Imported question set ${new Date().toISOString().slice(0, 10)}`;
+
+      const reader = new FileReader();
+      reader.onload = function (ev) {
+        let parsed;
+        try {
+          parsed = JSON.parse(ev.target.result);
+        } catch {
+          examStatus.textContent = 'Import set failed: the file is not valid JSON.';
+          return;
+        }
+
+        if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+          examStatus.textContent = 'Import set failed: the file does not contain a valid question set object.';
+          return;
+        }
+
+        // Accept either a single-set export (has "questions" array at root) or
+        // a full config export (has "savedQuestionSets" array — use the first set).
+        let rawSet = null;
+        if (Array.isArray(parsed.questions) && parsed.questions.length) {
+          rawSet = parsed;
+        } else if (Array.isArray(parsed.savedQuestionSets) && parsed.savedQuestionSets.length) {
+          rawSet = parsed.savedQuestionSets[0];
+        }
+
+        if (!rawSet || !Array.isArray(rawSet.questions) || !rawSet.questions.length) {
+          examStatus.textContent = 'Import set failed: no questions found in this file. Only files exported by this app are supported.';
+          return;
+        }
+
+        // Validate/normalize each question; count skipped for user feedback
+        const validQuestions = [];
+        let skippedQuestionCount = 0;
+        rawSet.questions.forEach((q, i) => {
+          try {
+            validQuestions.push(normalizeQuestion(q, `Imported question ${i + 1}`));
+          } catch {
+            skippedQuestionCount += 1;
+          }
+        });
+
+        if (!validQuestions.length) {
+          examStatus.textContent = 'Import set failed: no valid questions found in this file.';
+          return;
+        }
+
+        // Prompt user for a display name before saving
+        const userInput = prompt(
+          `Name this imported question set (${validQuestions.length} question${validQuestions.length === 1 ? '' : 's'}${skippedQuestionCount ? `; ${skippedQuestionCount} invalid question${skippedQuestionCount === 1 ? '' : 's'} will be skipped` : ''}):\n\nLeave blank to use the filename as the name, or Cancel to abort the import.`,
+          rawSet.name || defaultName
+        );
+        // null means user pressed Cancel
+        if (userInput === null) {
+          examStatus.textContent = 'Import cancelled.';
+          return;
+        }
+        const chosenName = userInput.trim() || defaultName;
+
+        // Merge known metadata fields; use Object.assign to avoid unexpected prototype properties
+        const existingMeta = (rawSet.metadata && typeof rawSet.metadata === 'object' && !Array.isArray(rawSet.metadata))
+          ? Object.assign({}, rawSet.metadata) : {};
+        Object.assign(existingMeta, {
+          importedAt: new Date().toISOString(),
+          importedFromFile: file.name,
+          originalSource: (typeof rawSet.source === 'string' && rawSet.source.trim()) ? rawSet.source : null
+        });
+
+        const newEntry = {
+          id: createHistoryId(),
+          name: chosenName,
+          generatedAt: (typeof rawSet.generatedAt === 'string' && rawSet.generatedAt) ? rawSet.generatedAt : new Date().toISOString(),
+          source: 'Imported set',
+          domains: Array.isArray(rawSet.domains) ? rawSet.domains : [],
+          model: (typeof rawSet.model === 'string' && rawSet.model.trim()) ? rawSet.model : null,
+          questionCount: validQuestions.length,
+          questions: validQuestions,
+          metadata: existingMeta
+        };
+
+        const existingHistory = loadHistory();
+        const newHistory = [newEntry, ...existingHistory];
+        if (newHistory.length > MAX_HISTORY) newHistory.splice(MAX_HISTORY, newHistory.length - MAX_HISTORY);
+        sessionHistoryFallback = newHistory;
+        const saved = lsSet(LS_HISTORY, newHistory);
+
+        let msg = `Imported "${chosenName}" with ${validQuestions.length} questions.`;
+        if (skippedQuestionCount) msg += ` (${skippedQuestionCount} invalid question${skippedQuestionCount === 1 ? '' : 's'} skipped.)`;
+        if (!saved) msg += ` ${HISTORY_SAVE_WARNING}`;
+        examStatus.textContent = msg;
+
+        renderHistoryList();
+        renderStatsPanel();
+      };
+
+      reader.onerror = function () {
+        examStatus.textContent = 'Import set failed: could not read the file.';
+      };
+
+      reader.readAsText(file);
     }
 
     // ── Stats panel ──────────────────────────────────────────────────────────
@@ -6402,6 +6595,24 @@ window.COHESITY_QUESTION_BANK =
     loadHistoryButton.addEventListener('click', loadHistorySet);
     exportHistorySetButton.addEventListener('click', exportHistorySet);
     clearHistoryButton.addEventListener('click', clearAllHistory);
+    deleteSelectedSetsButton.addEventListener('click', deleteSelectedHistorySets);
+    historySelectAllBtn.addEventListener('click', () => {
+      const cbs = historyListContainer.querySelectorAll('.hist-cb');
+      cbs.forEach(cb => { cb.checked = true; });
+      if (cbs.length) examStatus.textContent = `All ${cbs.length} saved sets selected.`;
+    });
+    historyClearSelectionBtn.addEventListener('click', () => {
+      historyListContainer.querySelectorAll('.hist-cb').forEach(cb => { cb.checked = false; });
+      examStatus.textContent = 'Selection cleared.';
+    });
+    importHistorySetButton.addEventListener('click', () => { importHistorySetFileInput.click(); });
+    importHistorySetFileInput.addEventListener('change', () => {
+      const file = importHistorySetFileInput.files && importHistorySetFileInput.files[0];
+      if (file) {
+        importSingleHistorySet(file);
+      }
+      importHistorySetFileInput.value = '';
+    });
 
     // ── Guide-grounded generation event listeners ────────────────────────────
     useGuideKnowledgeCheckbox.addEventListener('change', () => {
